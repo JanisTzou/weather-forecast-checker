@@ -7,8 +7,10 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -33,6 +35,7 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
  */
 @Log4j2
 @Component
+@Profile("meteoblue")
 public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     // TODO add validation of the produced hourly forecast ...
@@ -48,7 +51,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
         this.daysToScrape = days;
     }
 
-//    @PostConstruct
+    @PostConstruct
     public void scrape() {
         List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
@@ -72,7 +75,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         if (!hourForecasts.isEmpty()) {
-            return Optional.of(new Forecast(location.getLocationName(), hourForecasts));
+            return Optional.of(new Forecast(Source.METEOBLUE, location.getLocationName(), hourForecasts));
         }
         return Optional.empty();
     }

@@ -6,11 +6,13 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.annotation.Profile;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
+@Profile("chmu-oblacnost")
 public class ChmuScraper {
 
     public static void main(String[] args) {

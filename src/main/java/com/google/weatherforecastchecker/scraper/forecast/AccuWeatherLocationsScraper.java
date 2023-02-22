@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -21,6 +22,7 @@ import java.util.Optional;
  */
 @Log4j2
 @Component
+@Profile("accuweather-locations")
 public class AccuWeatherLocationsScraper {
 
     private final RestTemplate restTemplate;

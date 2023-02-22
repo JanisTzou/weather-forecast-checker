@@ -5,8 +5,10 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -20,6 +22,7 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.*;
 
 @Log4j2
 @Component
+@Profile("clearoutside")
 public class ClearOutsideScraper implements ForecastScraper<Location> {
 
     private final String urlTemplate;
@@ -31,7 +34,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
         this.daysToScrape = days;
     }
 
-//    @PostConstruct
+    @PostConstruct
     public void scrape() {
         List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
@@ -85,7 +88,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
                 }
             }
 
-            return Optional.of(new Forecast(location.getLocationName(), hourForecasts));
+            return Optional.of(new Forecast(Source.CLEAR_OUTSIDE, location.getLocationName(), hourForecasts));
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);

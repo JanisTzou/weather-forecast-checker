@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Component
+@Profile("accuweather")
 public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> {
 
     private final RestTemplate restTemplate;
@@ -52,7 +54,7 @@ public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> 
                 ResponseEntity<HourForecastDto[]> resp = restTemplate.getForEntity(url, HourForecastDto[].class);
                 if (resp.getBody() != null) {
                     List<HourForecast> forecasts = Arrays.stream(resp.getBody()).map(dto -> new HourForecast(dto.getDateTime(), dto.getCloudCover(), null)).collect(Collectors.toList());
-                    return Optional.of(new Forecast(location.getLocationName(), forecasts));
+                    return Optional.of(new Forecast(Source.ACCUWATHER, location.getLocationName(), forecasts));
                 }
             }
         } catch (Exception e) {

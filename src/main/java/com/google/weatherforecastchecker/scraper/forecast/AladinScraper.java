@@ -6,10 +6,12 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Location;
 import com.google.weatherforecastchecker.Utils;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -23,6 +25,7 @@ import java.util.stream.IntStream;
 
 @Log4j2
 @Component
+@Profile("aladin")
 public class AladinScraper implements ForecastScraper<Location> {
 
     // https://stackoverflow.com/questions/51958805/spring-boot-mvc-resttemplate-where-to-initialize-a-resttemplate-for-a-mvc-a
@@ -35,7 +38,7 @@ public class AladinScraper implements ForecastScraper<Location> {
         this.urlTemplate = urlTemplate;
     }
 
-//    @PostConstruct
+    @PostConstruct
     public void scrape() {
         List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
@@ -77,7 +80,7 @@ public class AladinScraper implements ForecastScraper<Location> {
                 })
                 .collect(Collectors.toList());
 
-        return Optional.of(new Forecast(location, forecasts));
+        return Optional.of(new Forecast(Source.ALADIN, location, forecasts));
     }
 
     @Data

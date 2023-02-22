@@ -32,10 +32,12 @@ public class HtmlUnitClientFactory {
         final WebClient webClient = new WebClient(BrowserVersion.CHROME);
         webClient.getOptions().setTimeout(15000);
         webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+        webClient.getOptions().setThrowExceptionOnScriptError(false);
+        webClient.getOptions().setCssEnabled(false);
         webClient.addRequestHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.86 Safari/537.36");
         webClient.getOptions().setJavaScriptEnabled(false);
         log.debug("Started new client: {}", webClient);
-        java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
+        java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF);
         return webClient;
     }
 
