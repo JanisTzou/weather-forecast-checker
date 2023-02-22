@@ -1,4 +1,4 @@
-package com.google.weatherforecastchecker.scraper.forcast;
+package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
@@ -7,7 +7,6 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,6 +17,7 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.getHtmlElementDescendants;
 import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssClass;
@@ -38,16 +38,19 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
     // TODO add validation of the produced hourly forecast ...
 
     private final String urlTemplate;
+    private final int daysToScrape;
 
     private static final Map<Integer, LocationsReader.MeteobluePictorgramsConfig> pictogramsConfigs = LocationsReader.getMeteobluePictogramsConfigs();
 
-    public MeteoBlueScraper(@Value("${meteoblue.web.forecast.url.template}") String urlTemplate) {
+    public MeteoBlueScraper(@Value("${meteoblue.web.forecast.url.template}") String urlTemplate,
+                            @Value("${meteoblue.web.forecast.days}") int days) {
         this.urlTemplate = urlTemplate;
+        this.daysToScrape = days;
     }
 
-    @PostConstruct
+//    @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocationConfigs();
+        List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
     }
 
@@ -64,7 +67,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     @Override
     public Optional<Forecast> scrape(Location location) {
-        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, 2) // 2 days scraping only
+        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, daysToScrape)
                 .mapToObj(day -> scrape(location, day))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -108,7 +111,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
                         return number.stream();
                     })
                     // TODO the descriptions of pictorgrams would be good as well to have ... so do not get the mapping of the coverage here ...
-                    .flatMap(n -> IntStream.rangeClosed(1, 3).map(i -> pictogramsConfigs.get(n).getCloudCoverage()).boxed())
+                    .flatMap(this::convertThreeHourlyToOneHourly)
                     .collect(Collectors.toList());
 
             Optional<LocalDate> date = parseDate(dateTimeStr.get());
@@ -123,6 +126,10 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
             log.error("Failed to scrape page ", e);
         }
         return Collections.emptyList();
+    }
+
+    private Stream<Integer> convertThreeHourlyToOneHourly(Integer n) {
+        return IntStream.rangeClosed(1, 3).map(i -> pictogramsConfigs.get(n).getCloudCoverage()).boxed();
     }
 
     private Optional<LocalDate> parseDate(String date) {

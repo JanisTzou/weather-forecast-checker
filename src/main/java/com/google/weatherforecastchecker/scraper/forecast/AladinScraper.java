@@ -1,4 +1,4 @@
-package com.google.weatherforecastchecker.scraper.forcast;
+package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,6 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Location;
 import com.google.weatherforecastchecker.Utils;
 import jakarta.annotation.Nullable;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -38,7 +37,7 @@ public class AladinScraper implements ForecastScraper<Location> {
 
 //    @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocationConfigs();
+        List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
     }
 

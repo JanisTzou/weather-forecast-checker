@@ -1,10 +1,9 @@
-package com.google.weatherforecastchecker.scraper.forcast;
+package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.weatherforecastchecker.Utils;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -35,7 +34,7 @@ public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> 
 
 //    @PostConstruct
     public void init() {
-        scrape(new AccuWeatherLocation("123456"));
+        // TODO
     }
 
     @Override

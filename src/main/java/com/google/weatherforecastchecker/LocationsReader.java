@@ -1,5 +1,6 @@
 package com.google.weatherforecastchecker;
 
+import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherLocation;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
@@ -19,11 +20,20 @@ public class LocationsReader {
     public static final String LOCATIONS_CONFIG = "/Users/janis/IdeaProjects/weather-forecast-checker/src/main/resources/locations_config.csv";
     public static final String METEOBLUE_PICTOGRAMS = "/Users/janis/IdeaProjects/weather-forecast-checker/src/main/resources/meteoblue_pictograms.csv";
 
-    public static List<Location> getLocationConfigs() {
+
+
+    public static List<Location> getLocations() {
         return readAndSplitConfigCsv(LOCATIONS_CONFIG).stream()
                 .map(split -> new Location(split.get(0), split.get(1), split.get(2)))
                 .collect(Collectors.toList());
     }
+
+    public static List<AccuWeatherLocation> getAccuWeatherLocations() {
+        return readAndSplitConfigCsv(LOCATIONS_CONFIG).stream()
+                .map(split -> new AccuWeatherLocation(split.get(0), split.get(1), split.get(2), split.size() >= 4 ? split.get(3) : null))
+                .collect(Collectors.toList());
+    }
+
     public static Map<Integer, MeteobluePictorgramsConfig> getMeteobluePictogramsConfigs() {
         return readAndSplitConfigCsv(METEOBLUE_PICTOGRAMS).stream()
                 .map(split -> new MeteobluePictorgramsConfig(Integer.parseInt(split.get(0)), split.get(1), Integer.parseInt(split.get(2))))

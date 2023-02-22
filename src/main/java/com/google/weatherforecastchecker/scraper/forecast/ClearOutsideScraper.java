@@ -1,11 +1,10 @@
-package com.google.weatherforecastchecker.scraper.forcast;
+package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.gargoylesoftware.htmlunit.html.*;
 import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,20 +23,23 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.*;
 public class ClearOutsideScraper implements ForecastScraper<Location> {
 
     private final String urlTemplate;
+    private final int daysToScrape;
 
-    public ClearOutsideScraper(@Value("${clearoutside.web.forecast.url.template}") String urlTemplate) {
+    public ClearOutsideScraper(@Value("${clearoutside.web.forecast.url.template}") String urlTemplate,
+                               @Value("${meteoblue.web.forecast.days}") int days) {
         this.urlTemplate = urlTemplate;
+        this.daysToScrape = days;
     }
 
 //    @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocationConfigs();
+        List<Location> locations = LocationsReader.getLocations();
         scrape(locations);
     }
 
     @Override
     public List<Forecast> scrape(List<Location> locations) {
-        return LocationsReader.getLocationConfigs().stream()
+        return LocationsReader.getLocations().stream()
                 .flatMap(l -> scrape(l).stream())
                 .peek(f -> {
                     System.out.println(f);
@@ -57,27 +59,30 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
 
             List<HourForecast> hourForecasts = new ArrayList<>();
 
+            int count = 0;
             for (DomElement day : forecastEl.getChildElements()) {
+                count++;
+                if (count <= daysToScrape) {
+                    Optional<LocalDate> date = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_day_date")).stream()
+                            .findFirst().map(d -> d.getTextContent().trim()).flatMap(d -> Utils.getFirstMatch(d, "\\d+"))
+                            .map(Integer::parseInt)
+                            .flatMap(this::gateDate);
 
-                Optional<LocalDate> date = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_day_date")).stream()
-                        .findFirst().map(d -> d.getTextContent().trim()).flatMap(d -> Utils.getFirstMatch(d, "\\d+"))
-                        .map(Integer::parseInt)
-                        .flatMap(this::gateDate);
+                    Optional<HtmlElement> totalCloudHourlyEl = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_detail_row")).stream().map(d -> (HtmlElement) d).findFirst();
 
-                Optional<HtmlElement> totalCloudHourlyEl = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_detail_row")).stream().map(d -> (HtmlElement) d).findFirst();
+                    // expected 24 values ... TODO validation
+                    List<Integer> hourCloudCoverages = totalCloudHourlyEl.stream().flatMap(e -> e.getElementsByTagName("li").stream())
+                            .map(e -> Integer.parseInt(e.getTextContent().trim()))
+                            .collect(Collectors.toList());
 
-                // expected 24 values ... TODO validation
-                List<Integer> hourCloudCoverages = totalCloudHourlyEl.stream().flatMap(e -> e.getElementsByTagName("li").stream())
-                        .map(e -> Integer.parseInt(e.getTextContent().trim()))
-                        .collect(Collectors.toList());
+                    LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
 
-                LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
+                    List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+                            .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                            .collect(Collectors.toList());
 
-                List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
-                        .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
-                        .collect(Collectors.toList());
-
-                hourForecasts.addAll(hourForcastsForDay);
+                    hourForecasts.addAll(hourForcastsForDay);
+                }
             }
 
             return Optional.of(new Forecast(location.getLocationName(), hourForecasts));

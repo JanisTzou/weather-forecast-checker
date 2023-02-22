@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "meteoblue.web.forecast.days",
+      "type": "java.lang.String",
+      "description": "Description for meteoblue.web.forecast.days."
+  }
+] }
