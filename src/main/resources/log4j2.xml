@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+    <Properties>
+        <Property name="level">info</Property>
+        <Property name="app-name">Scrapers</Property>
+        <Property name="layoutPattern">$${sys:app-name} %d{yyyy-MM-dd HH:mm:ss.SSS} %level %thread %c{1.}: %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+
+        <Console name="Console">
+            <PatternLayout pattern="${layoutPattern}"/>
+        </Console>
+
+    </Appenders>
+
+    <Loggers>
+
+        <Logger name="org.apache" level="error"/>
+
+        <Root level="${sys:level}">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

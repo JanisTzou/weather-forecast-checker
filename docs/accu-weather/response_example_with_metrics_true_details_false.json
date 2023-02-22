@@ -1,0 +1,194 @@
+[
+  {
+    "DateTime": "2023-02-22T14:00:00+01:00",
+    "EpochDateTime": 1677070800,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": true,
+    "Temperature": {
+      "Value": 12.5,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 2,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=14&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=14&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T15:00:00+01:00",
+    "EpochDateTime": 1677074400,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": true,
+    "Temperature": {
+      "Value": 12.6,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 2,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=15&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=15&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T16:00:00+01:00",
+    "EpochDateTime": 1677078000,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": true,
+    "Temperature": {
+      "Value": 11.8,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 2,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=16&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=16&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T17:00:00+01:00",
+    "EpochDateTime": 1677081600,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": true,
+    "Temperature": {
+      "Value": 10.7,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 2,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=17&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=17&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T18:00:00+01:00",
+    "EpochDateTime": 1677085200,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 9.5,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 4,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=18&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=18&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T19:00:00+01:00",
+    "EpochDateTime": 1677088800,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 8.3,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=19&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=19&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T20:00:00+01:00",
+    "EpochDateTime": 1677092400,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 7.5,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=20&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=20&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T21:00:00+01:00",
+    "EpochDateTime": 1677096000,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 6.8,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=21&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=21&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T22:00:00+01:00",
+    "EpochDateTime": 1677099600,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 6.5,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=22&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=22&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-22T23:00:00+01:00",
+    "EpochDateTime": 1677103200,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 6.2,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=23&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=1&hbhhour=23&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-23T00:00:00+01:00",
+    "EpochDateTime": 1677106800,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 5.9,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=2&hbhhour=0&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=2&hbhhour=0&unit=c&lang=en-us"
+  },
+  {
+    "DateTime": "2023-02-23T01:00:00+01:00",
+    "EpochDateTime": 1677110400,
+    "WeatherIcon": 7,
+    "IconPhrase": "Cloudy",
+    "HasPrecipitation": false,
+    "IsDaylight": false,
+    "Temperature": {
+      "Value": 5.5,
+      "Unit": "C",
+      "UnitType": 17
+    },
+    "PrecipitationProbability": 7,
+    "MobileLink": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=2&hbhhour=1&unit=c&lang=en-us",
+    "Link": "http://www.accuweather.com/en/cz/haje/1378011/hourly-weather-forecast/1378011?day=2&hbhhour=1&unit=c&lang=en-us"
+  }
+]
