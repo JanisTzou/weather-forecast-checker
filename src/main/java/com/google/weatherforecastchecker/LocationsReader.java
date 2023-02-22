@@ -1,6 +1,7 @@
 package com.google.weatherforecastchecker;
 
 import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherLocation;
+import com.google.weatherforecastchecker.scraper.measurement.ChmuLocation;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
@@ -20,17 +21,27 @@ public class LocationsReader {
     public static final String LOCATIONS_CONFIG = "/Users/janis/IdeaProjects/weather-forecast-checker/src/main/resources/locations_config.csv";
     public static final String METEOBLUE_PICTOGRAMS = "/Users/janis/IdeaProjects/weather-forecast-checker/src/main/resources/meteoblue_pictograms.csv";
 
-
+    private static final int LOC = 0;
+    private static final int CHMU_LOC = 1;
+    private static final int LAT = 2;
+    private static final int LON = 3;
+    private static final int ACC_LOC = 4;
 
     public static List<Location> getLocations() {
         return readAndSplitConfigCsv(LOCATIONS_CONFIG).stream()
-                .map(split -> new Location(split.get(0), split.get(1), split.get(2)))
+                .map(split -> new Location(split.get(LOC), split.get(LAT), split.get(LON)))
                 .collect(Collectors.toList());
     }
 
     public static List<AccuWeatherLocation> getAccuWeatherLocations() {
         return readAndSplitConfigCsv(LOCATIONS_CONFIG).stream()
-                .map(split -> new AccuWeatherLocation(split.get(0), split.get(1), split.get(2), split.size() >= 4 ? split.get(3) : null))
+                .map(split -> new AccuWeatherLocation(split.get(LOC), split.get(LAT), split.get(LON), split.size() >= ACC_LOC + 1 ? split.get(ACC_LOC) : null))
+                .collect(Collectors.toList());
+    }
+
+    public static List<ChmuLocation> getChmuLocations() {
+        return readAndSplitConfigCsv(LOCATIONS_CONFIG).stream()
+                .map(split -> new ChmuLocation(split.get(LOC), split.get(LAT), split.get(LON), split.get(CHMU_LOC)))
                 .collect(Collectors.toList());
     }
 

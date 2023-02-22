@@ -27,7 +27,7 @@ public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> 
     private final JsonMapper jsonMapper;
 
     public AccuWeatherScraper(RestTemplate restTemplate,
-                              @Value("${accuweather.api.forecast.url.template}") String urlTemplate,
+                              @Value("${accuweather.api.forecast.url}") String urlTemplate,
                               JsonMapper jsonMapper) {
         this.restTemplate = restTemplate;
         this.urlTemplate = urlTemplate;

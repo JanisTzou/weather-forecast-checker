@@ -30,7 +30,7 @@ public class AccuWeatherLocationsScraper {
     private final JsonMapper jsonMapper;
 
     public AccuWeatherLocationsScraper(RestTemplate restTemplate,
-                                       @Value("${accuweather.api.locatons.url.template}") String urlTemplate,
+                                       @Value("${accuweather.api.locatons.url}") String urlTemplate,
                                        JsonMapper jsonMapper) {
         this.restTemplate = restTemplate;
         this.urlTemplate = urlTemplate;

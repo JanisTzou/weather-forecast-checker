@@ -28,7 +28,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
     private final String urlTemplate;
     private final int daysToScrape;
 
-    public ClearOutsideScraper(@Value("${clearoutside.web.forecast.url.template}") String urlTemplate,
+    public ClearOutsideScraper(@Value("${clearoutside.web.forecast.url}") String urlTemplate,
                                @Value("${meteoblue.web.forecast.days}") int days) {
         this.urlTemplate = urlTemplate;
         this.daysToScrape = days;

@@ -45,7 +45,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     private static final Map<Integer, LocationsReader.MeteobluePictorgramsConfig> pictogramsConfigs = LocationsReader.getMeteobluePictogramsConfigs();
 
-    public MeteoBlueScraper(@Value("${meteoblue.web.forecast.url.template}") String urlTemplate,
+    public MeteoBlueScraper(@Value("${meteoblue.web.forecast.url}") String urlTemplate,
                             @Value("${meteoblue.web.forecast.days}") int days) {
         this.urlTemplate = urlTemplate;
         this.daysToScrape = days;

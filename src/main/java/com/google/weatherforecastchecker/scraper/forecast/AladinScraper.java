@@ -33,7 +33,7 @@ public class AladinScraper implements ForecastScraper<Location> {
     private final String urlTemplate;
 
     public AladinScraper(RestTemplate jsonAsTextRestTemplate,
-                         @Value("${aladin.api.forecast.url.template}") String urlTemplate) {
+                         @Value("${aladin.api.forecast.url}") String urlTemplate) {
         this.restTemplate = jsonAsTextRestTemplate;
         this.urlTemplate = urlTemplate;
     }
