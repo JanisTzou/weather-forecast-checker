@@ -6,13 +6,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class DayForecast {
+public class HourForecast {
 
-    private final String locationName;
-    private final LocalDateTime dateTime;
+    private final LocalDateTime hour;
     // 24 values expected but there can be an exception
-    private final List<Integer> cloudCoverPercentage;
+    private final int cloudCoverPercentage;
     // 24 values expected
-    private final List<String> descriptions;
+    private final String description;
 
 }

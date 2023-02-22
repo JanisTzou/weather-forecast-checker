@@ -5,6 +5,7 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.*;
 
@@ -27,8 +29,14 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
         this.urlTemplate = urlTemplate;
     }
 
+//    @PostConstruct
+    public void scrape() {
+        List<Location> locations = LocationsReader.getLocationConfigs();
+        scrape(locations);
+    }
+
     @Override
-    public List<DayForecast> scrape(List<Location> locations) {
+    public List<Forecast> scrape(List<Location> locations) {
         return LocationsReader.getLocationConfigs().stream()
                 .flatMap(l -> scrape(l).stream())
                 .peek(f -> {
@@ -39,14 +47,15 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
     }
 
     @Override
-    public List<DayForecast> scrape(Location location) {
+    public Optional<Forecast> scrape(Location location) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
             String url = Utils.fillTemplate(urlTemplate, values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
             DomElement forecastEl = page.getElementById("forecast");
-            List<DayForecast> forecasts = new ArrayList<>();
+
+            List<HourForecast> hourForecasts = new ArrayList<>();
 
             for (DomElement day : forecastEl.getChildElements()) {
 
@@ -57,22 +66,27 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
 
                 Optional<HtmlElement> totalCloudHourlyEl = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_detail_row")).stream().map(d -> (HtmlElement) d).findFirst();
 
-                List<Integer> totalCloudCoverage = totalCloudHourlyEl.stream().flatMap(e -> e.getElementsByTagName("li").stream())
+                // expected 24 values ... TODO validation
+                List<Integer> hourCloudCoverages = totalCloudHourlyEl.stream().flatMap(e -> e.getElementsByTagName("li").stream())
                         .map(e -> Integer.parseInt(e.getTextContent().trim()))
                         .collect(Collectors.toList());
 
                 LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
-                DayForecast dayForecast = new DayForecast(location.getLocationName(), dateTime, totalCloudCoverage, Collections.emptyList());
 
-                forecasts.add(dayForecast);
+                List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+                        .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                        .collect(Collectors.toList());
+
+                hourForecasts.addAll(hourForcastsForDay);
             }
 
-            return forecasts;
+            return Optional.of(new Forecast(location.getLocationName(), hourForecasts));
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
-            return Collections.emptyList();
         }
+
+        return Optional.empty();
     }
 
     private Optional<LocalDate> gateDate(int dayOfMonth) {

@@ -7,8 +7,10 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
  * https://content.meteoblue.com/en/research-education/specifications/standards/symbols-and-pictograms
  */
 @Log4j2
+@Component
 public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     // TODO add validation of the produced hourly forecast ...
@@ -42,8 +45,14 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
         this.urlTemplate = urlTemplate;
     }
 
+    @PostConstruct
+    public void scrape() {
+        List<Location> locations = LocationsReader.getLocationConfigs();
+        scrape(locations);
+    }
+
     @Override
-    public List<DayForecast> scrape(List<Location> locations) {
+    public List<Forecast> scrape(List<Location> locations) {
         return locations.stream()
                 .flatMap(l -> scrape(l).stream())
                 .peek(f -> {
@@ -54,14 +63,18 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
     }
 
     @Override
-    public List<DayForecast> scrape(Location config) {
-        return IntStream.rangeClosed(1, 2) // 2 days scraping only
-                .mapToObj(day -> scrape(config, day))
-                .flatMap(Optional::stream)
+    public Optional<Forecast> scrape(Location location) {
+        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, 2) // 2 days scraping only
+                .mapToObj(day -> scrape(location, day))
+                .flatMap(List::stream)
                 .collect(Collectors.toList());
+        if (!hourForecasts.isEmpty()) {
+            return Optional.of(new Forecast(location.getLocationName(), hourForecasts));
+        }
+        return Optional.empty();
     }
 
-    public Optional<DayForecast> scrape(Location location, int day) {
+    public List<HourForecast> scrape(Location location, int day) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude(), "day", day);
             String url = Utils.fillTemplate(urlTemplate, values);
@@ -81,7 +94,8 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
                     .map(e -> e.getAttribute("datetime"))
                     .findFirst();
 
-            List<Integer> totalCloudCoverage = threeHourlyView.stream()
+            // should get 24 values // TODO validation
+            List<Integer> hourCloudCoverages = threeHourlyView.stream()
                     .findFirst().stream().flatMap(e -> ((HtmlElement) e).getElementsByTagName("tr").stream())
                     .filter(e -> hasCssClass(e, "icons"))
                     .findFirst()
@@ -101,14 +115,14 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
             LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
 
-            DayForecast dayForecast = new DayForecast(location.getLocationName(), dateTime, totalCloudCoverage, Collections.emptyList());
-
-            return Optional.of(dayForecast);
+            return IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+                    .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                    .collect(Collectors.toList());
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
-            return Optional.empty();
         }
+        return Collections.emptyList();
     }
 
     private Optional<LocalDate> parseDate(String date) {
