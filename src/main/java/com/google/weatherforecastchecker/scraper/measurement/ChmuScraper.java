@@ -8,14 +8,18 @@ import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -28,10 +32,10 @@ public class ChmuScraper {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-yyyy H:mm");
 
-    private final String url;
+    private final Properties properties;
 
-    public ChmuScraper(@Value("${chmu.web.measurement.url}") String url) {
-        this.url = url;
+    public ChmuScraper(Properties properties) {
+        this.properties = properties;
     }
 
     @PostConstruct
@@ -45,7 +49,7 @@ public class ChmuScraper {
 
     public List<CloudCoverageMeasurement> scrape() {
         try {
-            HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
+            HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(properties.getUrl());
             List<HtmlElement> tbodyList = page.getElementsByTagName("tbody").stream().map(d -> (HtmlElement) d).collect(Collectors.toList());
             LocalDateTime dateTime = parseDateTime(tbodyList);
 
@@ -130,4 +134,13 @@ public class ChmuScraper {
         return Optional.empty();
     }
 
+    @Data
+    @ConfigurationProperties("chmu.web.measurement")
+    public static class Properties {
+
+        private String url;
+        private Duration scrapeEvery;
+        private Integer scrapeAtMinuteOfHour;
+
+    }
 }

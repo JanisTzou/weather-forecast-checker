@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -27,16 +28,14 @@ public class AccuWeatherLocationsScraper {
 
     private final RestTemplate restTemplate;
     private final String urlTemplate;
-    private final JsonMapper jsonMapper;
 
     public AccuWeatherLocationsScraper(RestTemplate restTemplate,
-                                       @Value("${accuweather.api.locatons.url}") String urlTemplate,
-                                       JsonMapper jsonMapper) {
+                                       @Value("${accuweather.api.locations.url}") String urlTemplate) {
         this.restTemplate = restTemplate;
         this.urlTemplate = urlTemplate;
-        this.jsonMapper = jsonMapper;
     }
 
+    @PostConstruct
     public void scrapeLocations() {
         for (AccuWeatherLocation location : LocationsReader.getAccuWeatherLocations()) {
             scrapeLocationKey(location).ifPresent(dto -> {

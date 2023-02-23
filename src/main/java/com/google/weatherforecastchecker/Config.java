@@ -26,7 +26,7 @@ public class Config {
     }
 
     @Bean("jsonAsTextRestTemplate")
-    public RestTemplate JsonAsTextRestTemplate() {
+    public RestTemplate jsonAsTextRestTemplate() {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         converter.setSupportedMediaTypes(List.of(MediaType.TEXT_HTML, MediaType.APPLICATION_JSON));
         return new RestTemplateBuilder().messageConverters(converter).build();

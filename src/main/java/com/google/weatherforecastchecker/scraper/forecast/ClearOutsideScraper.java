@@ -7,7 +7,7 @@ import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -25,13 +25,10 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.*;
 @Profile("clearoutside")
 public class ClearOutsideScraper implements ForecastScraper<Location> {
 
-    private final String urlTemplate;
-    private final int daysToScrape;
+    private final Properties properties;
 
-    public ClearOutsideScraper(@Value("${clearoutside.web.forecast.url}") String urlTemplate,
-                               @Value("${meteoblue.web.forecast.days}") int days) {
-        this.urlTemplate = urlTemplate;
-        this.daysToScrape = days;
+    public ClearOutsideScraper(Properties properties) {
+        this.properties = properties;
     }
 
     @PostConstruct
@@ -46,7 +43,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
                 .flatMap(l -> scrape(l).stream())
                 .peek(f -> {
                     System.out.println(f);
-                    Utils.sleep(60_000);
+                    Utils.sleep(properties.getDelayBetweenRequests().toMillis());
                 })
                 .collect(Collectors.toList());
     }
@@ -55,7 +52,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
     public Optional<Forecast> scrape(Location location) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
-            String url = Utils.fillTemplate(urlTemplate, values);
+            String url = Utils.fillTemplate(properties.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
             DomElement forecastEl = page.getElementById("forecast");
@@ -65,7 +62,7 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
             int count = 0;
             for (DomElement day : forecastEl.getChildElements()) {
                 count++;
-                if (count <= daysToScrape) {
+                if (count <= properties.getDays()) {
                     Optional<LocalDate> date = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_day_date")).stream()
                             .findFirst().map(d -> d.getTextContent().trim()).flatMap(d -> Utils.getFirstMatch(d, "\\d+"))
                             .map(Integer::parseInt)
@@ -78,13 +75,17 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
                             .map(e -> Integer.parseInt(e.getTextContent().trim()))
                             .collect(Collectors.toList());
 
-                    LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
+                    if (date.isPresent()) {
+                        LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
 
-                    List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
-                            .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
-                            .collect(Collectors.toList());
+                        List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+                                .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                                .collect(Collectors.toList());
 
-                    hourForecasts.addAll(hourForcastsForDay);
+                        hourForecasts.addAll(hourForcastsForDay);
+                    } else {
+                        log.warn("Failed to parse date!");
+                    }
                 }
             }
 
@@ -110,5 +111,8 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
         return daysMap;
     }
 
+    @ConfigurationProperties("clearoutside.web.forecast")
+    public static class Properties extends ScrapingProperties {
+    }
 
 }

@@ -10,7 +10,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -30,12 +30,12 @@ public class AladinScraper implements ForecastScraper<Location> {
 
     // https://stackoverflow.com/questions/51958805/spring-boot-mvc-resttemplate-where-to-initialize-a-resttemplate-for-a-mvc-a
     private final RestTemplate restTemplate;
-    private final String urlTemplate;
+    private final Properties properties;
 
     public AladinScraper(RestTemplate jsonAsTextRestTemplate,
-                         @Value("${aladin.api.forecast.url}") String urlTemplate) {
+                         Properties properties) {
         this.restTemplate = jsonAsTextRestTemplate;
-        this.urlTemplate = urlTemplate;
+        this.properties = properties;
     }
 
     @PostConstruct
@@ -44,13 +44,14 @@ public class AladinScraper implements ForecastScraper<Location> {
         scrape(locations);
     }
 
+    // TODO duplicated method?
     @Override
     public List<Forecast> scrape(List<Location> locations) {
         return locations.stream()
                 .flatMap(location -> scrape(location).stream())
                 .peek(f -> {
                     System.out.println(f);
-                    Utils.sleep(3000);
+                    Utils.sleep(properties.getDelayBetweenRequests().toMillis());
                 })
                 .collect(Collectors.toList());
     }
@@ -58,7 +59,7 @@ public class AladinScraper implements ForecastScraper<Location> {
     @Override
     public Optional<Forecast> scrape(Location location) {
         Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
-        String url = Utils.fillTemplate(urlTemplate, values);
+        String url = Utils.fillTemplate(properties.getUrl(), values);
 //        log.info(url);
         ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class); // content is text/content -> parse manually ...
         return toForecast(location.getLocationName(), resp.getBody());
@@ -96,6 +97,10 @@ public class AladinScraper implements ForecastScraper<Location> {
     public static final class ParameterValues {
         @JsonProperty("CLOUDS_TOTAL")
         private List<Double> cloudsTotal;
+    }
+
+    @ConfigurationProperties("aladin.api.forecast")
+    public static class Properties extends ScrapingProperties {
     }
 
 }

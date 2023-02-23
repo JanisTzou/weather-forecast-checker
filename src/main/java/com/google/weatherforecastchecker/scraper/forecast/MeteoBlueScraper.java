@@ -9,7 +9,7 @@ import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.Location;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -40,15 +40,12 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     // TODO add validation of the produced hourly forecast ...
 
-    private final String urlTemplate;
-    private final int daysToScrape;
+    private final Properties properties;
 
     private static final Map<Integer, LocationsReader.MeteobluePictorgramsConfig> pictogramsConfigs = LocationsReader.getMeteobluePictogramsConfigs();
 
-    public MeteoBlueScraper(@Value("${meteoblue.web.forecast.url}") String urlTemplate,
-                            @Value("${meteoblue.web.forecast.days}") int days) {
-        this.urlTemplate = urlTemplate;
-        this.daysToScrape = days;
+    public MeteoBlueScraper(Properties properties) {
+        this.properties = properties;
     }
 
     @PostConstruct
@@ -70,7 +67,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     @Override
     public Optional<Forecast> scrape(Location location) {
-        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, daysToScrape)
+        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, properties.getDays())
                 .mapToObj(day -> scrape(location, day))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -83,7 +80,7 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
     public List<HourForecast> scrape(Location location, int day) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude(), "day", day);
-            String url = Utils.fillTemplate(urlTemplate, values);
+            String url = Utils.fillTemplate(properties.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
 
@@ -137,6 +134,10 @@ public class MeteoBlueScraper implements ForecastScraper<Location> {
 
     private Optional<LocalDate> parseDate(String date) {
         return Optional.ofNullable(LocalDate.parse(date.substring(0, 10)));
+    }
+
+    @ConfigurationProperties("meteoblue.web.forecast")
+    public static class Properties extends ScrapingProperties {
     }
 
 }

@@ -2,12 +2,12 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.google.weatherforecastchecker.LocationsReader;
 import com.google.weatherforecastchecker.Utils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -23,25 +23,28 @@ import java.util.stream.Collectors;
 public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> {
 
     private final RestTemplate restTemplate;
-    private final String urlTemplate;
-    private final JsonMapper jsonMapper;
+    private final Properties properties;
 
     public AccuWeatherScraper(RestTemplate restTemplate,
-                              @Value("${accuweather.api.forecast.url}") String urlTemplate,
-                              JsonMapper jsonMapper) {
+                              Properties properties) {
         this.restTemplate = restTemplate;
-        this.urlTemplate = urlTemplate;
-        this.jsonMapper = jsonMapper;
+        this.properties = properties;
     }
 
 //    @PostConstruct
     public void init() {
-        // TODO
+        scrape(LocationsReader.getAccuWeatherLocations());
     }
 
     @Override
     public List<Forecast> scrape(List<AccuWeatherLocation> locations) {
-        return null;
+        return locations.stream()
+                .flatMap(l -> scrape(l).stream())
+                .peek(f -> {
+                    System.out.println(f);
+                    Utils.sleep(properties.getDelayBetweenRequests().toMillis());
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -49,7 +52,7 @@ public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> 
         try {
             if (location.getLocationKey() != null) {
                 Map<String, Object> values = Map.of("locationKey", location.getLocationKey());
-                String url = Utils.fillTemplate(urlTemplate, values);
+                String url = Utils.fillTemplate(properties.getUrl(), values);
                 log.info(url);
                 ResponseEntity<HourForecastDto[]> resp = restTemplate.getForEntity(url, HourForecastDto[].class);
                 if (resp.getBody() != null) {
@@ -73,6 +76,10 @@ public class AccuWeatherScraper implements ForecastScraper<AccuWeatherLocation> 
 
         @JsonProperty("CloudCover")
         private int cloudCover;
+    }
+
+    @ConfigurationProperties("accuweather.api.forecast")
+    public static class Properties extends ScrapingProperties {
     }
 
 }
