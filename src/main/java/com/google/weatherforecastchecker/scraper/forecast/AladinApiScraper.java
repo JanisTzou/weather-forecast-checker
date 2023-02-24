@@ -2,8 +2,8 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.LocationsReader;
-import com.google.weatherforecastchecker.Location;
+import com.google.weatherforecastchecker.LocationConfig;
+import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.Utils;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -26,43 +26,41 @@ import java.util.stream.IntStream;
 @Log4j2
 @Component
 @Profile("aladin")
-public class AladinScraper implements ForecastScraper<Location> {
+public class AladinApiScraper implements ForecastScraper<LocationConfig> {
 
     // https://stackoverflow.com/questions/51958805/spring-boot-mvc-resttemplate-where-to-initialize-a-resttemplate-for-a-mvc-a
     private final RestTemplate restTemplate;
     private final Properties properties;
 
-    public AladinScraper(RestTemplate jsonAsTextRestTemplate,
-                         Properties properties) {
+    public AladinApiScraper(RestTemplate jsonAsTextRestTemplate,
+                            Properties properties) {
         this.restTemplate = jsonAsTextRestTemplate;
         this.properties = properties;
     }
 
     @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocations();
-        scrape(locations);
-    }
-
-    // TODO duplicated method?
-    @Override
-    public List<Forecast> scrape(List<Location> locations) {
-        return locations.stream()
-                .flatMap(location -> scrape(location).stream())
-                .peek(f -> {
-                    System.out.println(f);
-                    Utils.sleep(properties.getDelayBetweenRequests().toMillis());
-                })
-                .collect(Collectors.toList());
+        List<LocationConfig> locationConfigs = LocationConfigRepository.getLocationConfigs(getSource());
+        scrape(locationConfigs);
     }
 
     @Override
-    public Optional<Forecast> scrape(Location location) {
+    public Source getSource() {
+        return Source.ALADIN_API;
+    }
+
+    @Override
+    public ScrapingProperties getScrapingProperties() {
+        return properties;
+    }
+
+    @Override
+    public Optional<Forecast> scrape(LocationConfig location) {
         Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
         String url = Utils.fillTemplate(properties.getUrl(), values);
 //        log.info(url);
         ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class); // content is text/content -> parse manually ...
-        return toForecast(location.getLocationName(), resp.getBody());
+        return toForecast(location.getName(), resp.getBody());
     }
 
     public Optional<Forecast> toForecast(String location, @Nullable ForecastDto forecastDto) {
@@ -81,8 +79,10 @@ public class AladinScraper implements ForecastScraper<Location> {
                 })
                 .collect(Collectors.toList());
 
-        return Optional.of(new Forecast(Source.ALADIN, location, forecasts));
+        return Optional.of(new Forecast(getSource(), location, forecasts));
     }
+
+
 
     @Data
     @NoArgsConstructor

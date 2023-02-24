@@ -3,14 +3,14 @@ package com.google.weatherforecastchecker.scraper.measurement;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.google.weatherforecastchecker.Location;
-import com.google.weatherforecastchecker.LocationsReader;
+import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
+import com.google.weatherforecastchecker.scraper.TimedScraping;
+import com.google.weatherforecastchecker.scraper.forecast.Source;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -66,7 +66,7 @@ public class ChmuScraper {
         List<CloudCoverageMeasurement> measurements = new ArrayList<>();
 
         if (table2.isPresent()) {
-            Map<String, ChmuLocation> locationsByStations = getLocationsByStations(LocationsReader.getChmuLocations());
+            Map<String, ChmuLocationConfig> locationsByStations = getLocationsByStations(LocationConfigRepository.getLocationConfigs(Source.CHMU));
             DomNodeList<HtmlElement> rows = table2.get().getElementsByTagName("tr");
             for (int rowNo = 1; rowNo < rows.size(); rowNo++) { // skip first row containing headers
                 HtmlElement row = rows.get(rowNo);
@@ -75,8 +75,8 @@ public class ChmuScraper {
                     Optional<String> pokrytiOblohyStr = row.getElementsByTagName("td").stream().limit(3).reduce((d1, d2) -> d2).map(e -> e.getTextContent().trim());
                     Optional<Integer> pokrytiOblohyInt = pokrytiOblohyStr.flatMap(d -> Utils.getFirstMatch(d, "\\d\\/\\d")).map(m -> m.split("/")[0]).map(Integer::parseInt);
                     Optional<Integer> pokrytiOblohyPercent = pokrytiOblohyInt.flatMap(this::fractionToPercentage);
-                    Location location = locationsByStations.get(stanice.get());
-                    String locationName = location != null ? location.getLocationName() : null;
+                    ChmuLocationConfig location = locationsByStations.get(stanice.get());
+                    String locationName = location != null ? location.getName() : null;
 
                     CloudCoverageMeasurement measurement = new CloudCoverageMeasurement(
                             dateTime,
@@ -109,7 +109,8 @@ public class ChmuScraper {
         try {
             if (dateTime != null) {
                 if (dateTime.length() >= 16) {
-                    LocalDateTime parsed = LocalDateTime.parse(dateTime.substring(0, 16).replaceAll("\\. ", "-"), DATE_TIME_FORMATTER);
+                    // example of datetime = "24. 2. 2023 21:00 SE�"
+                    LocalDateTime parsed = LocalDateTime.parse(dateTime.substring(0, dateTime.indexOf("SE") - 1).replaceAll("\\. ", "-"), DATE_TIME_FORMATTER);
                     return Optional.of(parsed);
                 }
             }
@@ -123,8 +124,8 @@ public class ChmuScraper {
      * The response includes � replacement characters and to match the contained station
      * names to our locations we need to create this mapping
      */
-    Map<String, ChmuLocation> getLocationsByStations(List<ChmuLocation> locations) {
-        return locations.stream().collect(Collectors.toMap(ChmuLocation::getStationName, c -> c));
+    Map<String, ChmuLocationConfig> getLocationsByStations(List<ChmuLocationConfig> locationConfigs) {
+        return locationConfigs.stream().collect(Collectors.toMap(ChmuLocationConfig::getStationName, c -> c));
     }
 
     Optional<Integer> fractionToPercentage(Integer eights) {
@@ -136,11 +137,17 @@ public class ChmuScraper {
 
     @Data
     @ConfigurationProperties("chmu.web.measurement")
-    public static class Properties {
+    public static class Properties implements TimedScraping {
 
         private String url;
         private Duration scrapeEvery;
         private Integer scrapeAtMinuteOfHour;
 
+        @Override
+        public List<LocalTime> getScrapingTimes() {
+
+            return null;
+        }
     }
+
 }

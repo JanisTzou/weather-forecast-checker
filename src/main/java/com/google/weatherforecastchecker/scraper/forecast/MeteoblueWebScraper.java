@@ -3,10 +3,11 @@ package com.google.weatherforecastchecker.scraper.forecast;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.google.weatherforecastchecker.LocationsReader;
+import com.google.weatherforecastchecker.LocationConfig;
+import com.google.weatherforecastchecker.LocationConfigRepository;
+import com.google.weatherforecastchecker.MeteobluePictorgramsConfig;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
-import com.google.weatherforecastchecker.Location;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -35,49 +36,48 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
  */
 @Log4j2
 @Component
-@Profile("meteoblue")
-public class MeteoBlueScraper implements ForecastScraper<Location> {
+@Profile("meteoblue-web")
+public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
 
     // TODO add validation of the produced hourly forecast ...
 
     private final Properties properties;
 
-    private static final Map<Integer, LocationsReader.MeteobluePictorgramsConfig> pictogramsConfigs = LocationsReader.getMeteobluePictogramsConfigs();
+    private static final Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs = LocationConfigRepository.getMeteobluePictogramsConfigs();
 
-    public MeteoBlueScraper(Properties properties) {
+    public MeteoblueWebScraper(Properties properties) {
         this.properties = properties;
     }
 
     @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocations();
+        List<LocationConfig> locations = LocationConfigRepository.getLocationConfigs(getSource());
         scrape(locations);
     }
 
     @Override
-    public List<Forecast> scrape(List<Location> locations) {
-        return locations.stream()
-                .flatMap(l -> scrape(l).stream())
-                .peek(f -> {
-                    System.out.println(f);
-                    Utils.sleep(5000);
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Optional<Forecast> scrape(Location location) {
+    public Optional<Forecast> scrape(LocationConfig locationConfig) {
         List<HourForecast> hourForecasts = IntStream.rangeClosed(1, properties.getDays())
-                .mapToObj(day -> scrape(location, day))
+                .mapToObj(day -> scrape(locationConfig, day))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         if (!hourForecasts.isEmpty()) {
-            return Optional.of(new Forecast(Source.METEOBLUE, location.getLocationName(), hourForecasts));
+            return Optional.of(new Forecast(getSource(), locationConfig.getName(), hourForecasts));
         }
         return Optional.empty();
     }
 
-    public List<HourForecast> scrape(Location location, int day) {
+    @Override
+    public Source getSource() {
+        return Source.METEOBLUE_WEB;
+    }
+
+    @Override
+    public ScrapingProperties getScrapingProperties() {
+        return properties;
+    }
+
+    public List<HourForecast> scrape(LocationConfig location, int day) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude(), "day", day);
             String url = Utils.fillTemplate(properties.getUrl(), values);

@@ -1,32 +1,25 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
+import com.google.weatherforecastchecker.Utils;
+import com.google.weatherforecastchecker.scraper.TimedScraping;
 import lombok.Data;
 
 import java.time.Duration;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Data
-abstract class ScrapingProperties {
-
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm");
+abstract class ScrapingProperties implements TimedScraping {
 
     private String url;
+    private boolean enabled;
     private int days;
-    private String scrapeAtTimes;
+    private String scrapingTimes;
     private Duration delayBetweenRequests;
 
-    public List<LocalTime> getscrapeAtTimes() {
-        if (scrapeAtTimes != null) {
-            return Arrays.stream(scrapeAtTimes.split(","))
-                    .map(text -> LocalTime.parse(text, TIME_FORMATTER))
-                    .collect(Collectors.toList());
-        }
-        return Collections.emptyList();
+    @Override
+    public List<LocalTime> getScrapingTimes() {
+        return Utils.parseScrapingTimes(scrapingTimes);
     }
-    
+
 }

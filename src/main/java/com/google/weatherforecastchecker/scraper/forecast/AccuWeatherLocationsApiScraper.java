@@ -1,8 +1,7 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.weatherforecastchecker.LocationsReader;
+import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -24,29 +23,30 @@ import java.util.Optional;
 @Log4j2
 @Component
 @Profile("accuweather-locations")
-public class AccuWeatherLocationsScraper {
+public class AccuWeatherLocationsApiScraper {
 
     private final RestTemplate restTemplate;
     private final String urlTemplate;
 
-    public AccuWeatherLocationsScraper(RestTemplate restTemplate,
-                                       @Value("${accuweather.api.locations.url}") String urlTemplate) {
+    public AccuWeatherLocationsApiScraper(RestTemplate restTemplate,
+                                          @Value("${accuweather.api.locations.url}") String urlTemplate) {
         this.restTemplate = restTemplate;
         this.urlTemplate = urlTemplate;
     }
 
     @PostConstruct
     public void scrapeLocations() {
-        for (AccuWeatherLocation location : LocationsReader.getAccuWeatherLocations()) {
-            scrapeLocationKey(location).ifPresent(dto -> {
-                System.out.println("LOCATION=" + location.getLocationName() + ",KEY=" + dto.getKey() + ",DETAILS=" + dto);
+        List<AccuWeatherLocationConfig> locationConfigs = LocationConfigRepository.getLocationConfigs(Source.ACCUWATHER_API);
+        for (AccuWeatherLocationConfig locationConfig : locationConfigs) {
+            scrapeLocationKey(locationConfig).ifPresent(dto -> {
+                System.out.println("LOCATION=" + locationConfig.getName() + ",KEY=" + dto.getKey() + ",DETAILS=" + dto);
             });
         }
     }
 
-    public Optional<LocationDto> scrapeLocationKey(AccuWeatherLocation location) {
-        if (location.getLocationKey() == null) {
-            Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
+    public Optional<LocationDto> scrapeLocationKey(AccuWeatherLocationConfig locationConfig) {
+        if (locationConfig.getLocationKey() == null) {
+            Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
             String url = Utils.fillTemplate(urlTemplate, values);
             log.info(url);
             ResponseEntity<LocationDto> resp = restTemplate.getForEntity(url, LocationDto.class);

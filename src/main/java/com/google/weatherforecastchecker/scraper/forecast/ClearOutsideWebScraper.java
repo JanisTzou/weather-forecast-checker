@@ -1,10 +1,12 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
-import com.gargoylesoftware.htmlunit.html.*;
-import com.google.weatherforecastchecker.LocationsReader;
+import com.gargoylesoftware.htmlunit.html.DomElement;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.google.weatherforecastchecker.LocationConfig;
+import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
-import com.google.weatherforecastchecker.Location;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,40 +20,30 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.*;
+import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.getHtmlElementDescendants;
+import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssClass;
 
 @Log4j2
 @Component
 @Profile("clearoutside")
-public class ClearOutsideScraper implements ForecastScraper<Location> {
+public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
 
     private final Properties properties;
 
-    public ClearOutsideScraper(Properties properties) {
+    public ClearOutsideWebScraper(Properties properties) {
         this.properties = properties;
     }
 
     @PostConstruct
     public void scrape() {
-        List<Location> locations = LocationsReader.getLocations();
+        List<LocationConfig> locations = LocationConfigRepository.getLocationConfigs(getSource());
         scrape(locations);
     }
 
     @Override
-    public List<Forecast> scrape(List<Location> locations) {
-        return LocationsReader.getLocations().stream()
-                .flatMap(l -> scrape(l).stream())
-                .peek(f -> {
-                    System.out.println(f);
-                    Utils.sleep(properties.getDelayBetweenRequests().toMillis());
-                })
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Optional<Forecast> scrape(Location location) {
+    public Optional<Forecast> scrape(LocationConfig locationConfig) {
         try {
-            Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
+            Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
             String url = Utils.fillTemplate(properties.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
@@ -89,13 +81,23 @@ public class ClearOutsideScraper implements ForecastScraper<Location> {
                 }
             }
 
-            return Optional.of(new Forecast(Source.CLEAR_OUTSIDE, location.getLocationName(), hourForecasts));
+            return Optional.of(new Forecast(getSource(), locationConfig.getName(), hourForecasts));
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
         }
 
         return Optional.empty();
+    }
+
+    @Override
+    public Source getSource() {
+        return Source.CLEAR_OUTSIDE_WEB;
+    }
+
+    @Override
+    public ScrapingProperties getScrapingProperties() {
+        return properties;
     }
 
     private Optional<LocalDate> gateDate(int dayOfMonth) {
