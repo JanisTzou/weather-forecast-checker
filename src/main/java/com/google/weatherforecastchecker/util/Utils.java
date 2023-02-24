@@ -1,5 +1,6 @@
-package com.google.weatherforecastchecker;
+package com.google.weatherforecastchecker.util;
 
+import com.google.weatherforecastchecker.LocationConfigRepository;
 import org.apache.commons.text.StringSubstitutor;
 
 import java.io.BufferedReader;
@@ -60,8 +61,8 @@ public class Utils {
         }
     }
 
-    public static List<LocalTime> parseScrapingTimes(String times) {
-        if (times != null) {
+    public static List<LocalTime> parseCommaSeparatedTimes(String times) {
+        if (times != null && !times.isEmpty()) {
             return Arrays.stream(times.split(","))
                     .map(text -> LocalTime.parse(times, TIME_FORMATTER))
                     .collect(Collectors.toList());

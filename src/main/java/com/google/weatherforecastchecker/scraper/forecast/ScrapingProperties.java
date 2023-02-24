@@ -1,7 +1,7 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
-import com.google.weatherforecastchecker.Utils;
 import com.google.weatherforecastchecker.scraper.TimedScraping;
+import com.google.weatherforecastchecker.util.Utils;
 import lombok.Data;
 
 import java.time.Duration;
@@ -19,7 +19,7 @@ abstract class ScrapingProperties implements TimedScraping {
 
     @Override
     public List<LocalTime> getScrapingTimes() {
-        return Utils.parseScrapingTimes(scrapingTimes);
+        return Utils.parseCommaSeparatedTimes(scrapingTimes);
     }
 
 }

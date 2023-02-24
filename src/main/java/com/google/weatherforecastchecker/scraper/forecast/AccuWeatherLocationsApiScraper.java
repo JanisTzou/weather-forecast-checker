@@ -2,7 +2,7 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.weatherforecastchecker.LocationConfigRepository;
-import com.google.weatherforecastchecker.Utils;
+import com.google.weatherforecastchecker.util.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;

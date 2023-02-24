@@ -3,33 +3,36 @@ package com.google.weatherforecastchecker;
 import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherLocationConfig;
 import com.google.weatherforecastchecker.scraper.forecast.Source;
 import com.google.weatherforecastchecker.scraper.measurement.ChmuLocationConfig;
+import com.google.weatherforecastchecker.util.CsvFile;
 import lombok.extern.log4j.Log4j2;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.google.weatherforecastchecker.LocationConfigRepository.Headers.*;
+
 @Log4j2
 public class LocationConfigRepository {
 
-    public static final String no_value = "-";
+    static class Headers {
+        static final String LOCATION_NAME = "Location";
+        static final String LATITUDE = "Latitude";
+        static final String LONGITUDE = "Longitude";
 
-    private static final int LOC_NAME = 0;
-    private static final int LAT = 1;
-    private static final int LON = 2;
+        static final String ENABLED = "Enabled";
+        static final String SCRAPING_TIMES = "ScrapingTimes";
 
-    private static final int ENABLED = 1;
-    private static final int SCRAPE_AT_TIMES = 2;
+        static final String ACCUWEATHER_LOCATION_KEY = "locationKey";
+        static final String CHMU_STATION = "Station";
 
-    private static final int ACCUWEATHER_LOCATION_KEY = 3;
-    private static final int CHMU_STATION = 1;
+        static final String PICTOGRAM_NO = "Nr";
+        static final String PICTOGRAM_DESC = "Description";
+        static final String PICTOGRAM_CLOUD_COVERAGE = "Total Cloud Coverage";
+    }
 
     private static final Map<String, Location> locationByNameMap = new ConcurrentHashMap<>();
 
@@ -64,46 +67,48 @@ public class LocationConfigRepository {
     }
 
     public static List<Location> getLocations() {
-        return readAndSplitConfigCsv(getPath(locationsFile)).stream()
-                .map(s -> new Location(s.get(LOC_NAME), s.get(LAT), s.get(LON)))
-                .collect(Collectors.toList());
+        return CsvFile.fromResourceFile(getPath(locationsFile)).getLines().stream()
+                .map(l -> new Location(
+                        l.getString(LOCATION_NAME),
+                        l.getString(LATITUDE),
+                        l.getString(LONGITUDE))
+                ).collect(Collectors.toList());
     }
 
     public static List<LocationConfig> getLocationConfigs(String configFile) {
-        return readAndSplitConfigCsv(getPath(configFile)).stream()
-                .map(s -> {
-                    Location location = getLocation(s.get(LOC_NAME));
-                    List<LocalTime> scrapingTimes = parseScrapingTimes(s.get(SCRAPE_AT_TIMES));
-                    boolean enabled = Boolean.parseBoolean(s.get(ENABLED));
-                    return new LocationConfig(location, enabled, scrapingTimes);
-                })
-                .collect(Collectors.toList());
+        return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
+                .map(l -> new LocationConfig(
+                        getLocation(l.getString(LOCATION_NAME)),
+                        l.getBoolean(ENABLED),
+                        l.getTimes(SCRAPING_TIMES))
+                ).collect(Collectors.toList());
     }
 
     public static List<AccuWeatherLocationConfig> getAccuWeatherLocations(String configFile) {
         Map<String, LocationConfig> configsByName = getLocationConfigsByName(configFile);
-        return readAndSplitConfigCsv(getPath(configFile)).stream()
-                .map(s -> {
-                    LocationConfig config = configsByName.get(s.get(LOC_NAME));
-                    return new AccuWeatherLocationConfig(config, s.get(ACCUWEATHER_LOCATION_KEY));
-                })
-                .collect(Collectors.toList());
+        return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
+                .map(l -> new AccuWeatherLocationConfig(
+                        configsByName.get(l.getString(LOCATION_NAME)),
+                        l.getString(ACCUWEATHER_LOCATION_KEY))
+                ).collect(Collectors.toList());
     }
 
     public static List<ChmuLocationConfig> getChmuLocationConfigs(String configFile) {
         Map<String, Location> configsByName = getLocationsByName();
-        return readAndSplitConfigCsv(getPath(configFile)).stream()
-                .map(s -> {
-                    Location config = configsByName.get(s.get(LOC_NAME));
-                    return new ChmuLocationConfig(config, s.get(CHMU_STATION));
-                })
-                .collect(Collectors.toList());
+        return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
+                .map(l -> new ChmuLocationConfig(
+                        configsByName.get(l.getString(LOCATION_NAME)),
+                        l.getString(CHMU_STATION))
+                ).collect(Collectors.toList());
     }
 
     public static Map<Integer, MeteobluePictorgramsConfig> getMeteobluePictogramsConfigs() {
-        return readAndSplitConfigCsv(getPath(meteobluePictogramsMappingFile)).stream()
-                .map(split -> new MeteobluePictorgramsConfig(Integer.parseInt(split.get(0)), split.get(1), Integer.parseInt(split.get(2))))
-                .collect(Collectors.toMap(MeteobluePictorgramsConfig::getPictogramId, m -> m));
+        return CsvFile.fromResourceFile(getPath(meteobluePictogramsMappingFile)).getLines().stream()
+                .map(l -> new MeteobluePictorgramsConfig(
+                        l.getInt(PICTOGRAM_NO),
+                        l.getString(PICTOGRAM_DESC),
+                        l.getInt(PICTOGRAM_CLOUD_COVERAGE)
+                )).collect(Collectors.toMap(MeteobluePictorgramsConfig::getPictogramId, m -> m));
     }
 
     // ===== private methods =====
@@ -120,34 +125,12 @@ public class LocationConfigRepository {
         return getLocations().stream().collect(Collectors.toMap(Location::getName, l -> l));
     }
 
-    private static List<LocalTime> parseScrapingTimes(String timesStr) {
-        if (no_value.equals(timesStr)) {
-            return Collections.emptyList();
-        } else {
-            return Utils.parseScrapingTimes(timesStr);
-        }
-    }
-
     private static Location getLocation(String locationName) {
         Location location = locationByNameMap.get(locationName);
         if (location == null) {
             throw new IllegalArgumentException("Failed to find location for name " + locationName);
         }
         return location;
-    }
-
-    private static List<List<String>> readAndSplitConfigCsv(String resourcesFile) {
-        try {
-            return Utils.readResourcesFileLines(resourcesFile).stream()
-                    .skip(1L)
-                    .map(line -> {
-                        String[] items = line.trim().split("\\|");
-                        return Arrays.asList(items);
-                    }).collect(Collectors.toList());
-        } catch (IOException e) {
-            log.error("Failed to read configuration file!", e);
-            return Collections.emptyList();
-        }
     }
 
 }

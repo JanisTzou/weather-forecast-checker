@@ -1,7 +1,7 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.google.weatherforecastchecker.LocationConfig;
-import com.google.weatherforecastchecker.Utils;
+import com.google.weatherforecastchecker.util.Utils;
 
 import java.util.List;
 import java.util.Optional;
