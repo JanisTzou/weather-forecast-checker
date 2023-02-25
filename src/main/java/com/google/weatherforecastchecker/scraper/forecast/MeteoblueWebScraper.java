@@ -3,14 +3,13 @@ package com.google.weatherforecastchecker.scraper.forecast;
 import com.gargoylesoftware.htmlunit.html.DomNode;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.google.weatherforecastchecker.LocationConfig;
-import com.google.weatherforecastchecker.LocationConfigRepository;
-import com.google.weatherforecastchecker.MeteobluePictorgramsConfig;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
+import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
+import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -36,28 +35,22 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
  */
 @Log4j2
 @Component
-@Profile("meteoblue-web")
+@Profile({"meteoblue-web", "default"})
 public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
 
     // TODO add validation of the produced hourly forecast ...
 
-    private final Properties properties;
+    private final MeteoblueWebScraperProps props;
 
     private static final Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs = LocationConfigRepository.getMeteobluePictogramsConfigs();
 
-    public MeteoblueWebScraper(Properties properties) {
-        this.properties = properties;
-    }
-
-    @PostConstruct
-    public void scrape() {
-        List<LocationConfig> locations = LocationConfigRepository.getLocationConfigs(getSource());
-        scrape(locations);
+    public MeteoblueWebScraper(MeteoblueWebScraperProps props) {
+        this.props = props;
     }
 
     @Override
     public Optional<Forecast> scrape(LocationConfig locationConfig) {
-        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, properties.getDays())
+        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, props.getDays())
                 .mapToObj(day -> scrape(locationConfig, day))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -73,14 +66,14 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public ScrapingProperties getScrapingProperties() {
-        return properties;
+    public ForecastScrapingProps getScrapingProps() {
+        return props;
     }
 
     public List<HourForecast> scrape(LocationConfig location, int day) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude(), "day", day);
-            String url = Utils.fillTemplate(properties.getUrl(), values);
+            String url = Utils.fillTemplate(props.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
 
@@ -134,10 +127,6 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
 
     private Optional<LocalDate> parseDate(String date) {
         return Optional.ofNullable(LocalDate.parse(date.substring(0, 10)));
-    }
-
-    @ConfigurationProperties("meteoblue.web.forecast")
-    public static class Properties extends ScrapingProperties {
     }
 
 }

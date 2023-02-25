@@ -2,14 +2,13 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.LocationConfig;
-import com.google.weatherforecastchecker.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
+import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -24,28 +23,23 @@ import java.util.stream.IntStream;
 
 @Log4j2
 @Component
-@Profile("meteoblue-api")
+@Profile({"meteoblue-api", "default"})
 public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
 
     private final RestTemplate restTemplate;
-    private final Properties properties;
+    private final MeteoblueApiScraperProps props;
 
     public MeteoblueApiScraper(RestTemplate restTemplate,
-                               Properties properties) {
+                               MeteoblueApiScraperProps props) {
         this.restTemplate = restTemplate;
-        this.properties = properties;
-    }
-
-    @PostConstruct
-    public void init() {
-        scrape(LocationConfigRepository.getLocationConfigs(getSource()));
+        this.props = props;
     }
 
     @Override
     public Optional<Forecast> scrape(LocationConfig locationConfig) {
         try {
             Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
-            String url = Utils.fillTemplate(properties.getUrl(), values);
+            String url = Utils.fillTemplate(props.getUrl(), values);
             log.info(url);
             ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class);
             return mapToForecast(resp.getBody(), locationConfig.getName());
@@ -61,8 +55,8 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public ScrapingProperties getScrapingProperties() {
-        return properties;
+    public ForecastScrapingProps getScrapingProps() {
+        return props;
     }
 
     private Optional<Forecast> mapToForecast(ForecastDto forecastDto, String locationName) {
@@ -76,7 +70,7 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
     private List<HourForecast> mapToHourForcasts(ForecastDto forecastDto) {
         Data1Hr data1Hr = forecastDto.getData1Hr();
         int count = Math.min(data1Hr.getTime().size(), data1Hr.getTotalCloudCover().size());
-        int maxHoursToInclude = properties.getDays() * 24;
+        int maxHoursToInclude = props.getDays() * 24;
         int hours = Math.min(count, maxHoursToInclude);
         List<HourForecast> hourForecasts = IntStream.range(1, hours)
                 .mapToObj(h -> new HourForecast(
@@ -120,10 +114,6 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
         @JsonProperty("modelrun_updatetime_utc")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
         private LocalDateTime modelRunUpdateTimeUtc;
-    }
-
-    @ConfigurationProperties("meteoblue.api.forecast")
-    public static class Properties extends ScrapingProperties {
     }
 
 }

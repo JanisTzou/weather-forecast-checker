@@ -1,0 +1,26 @@
+package com.google.weatherforecastchecker.scraper;
+
+import lombok.Data;
+
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+/**
+ * @param <T> location to scrape
+ * @param <R> result of the scraping
+ */
+@Data
+public class ScrapingByLocation<T extends LocationConfig, R> {
+
+    private final Function<T, Callable<Optional<R>>> scraping;
+    private final Consumer<R> resultConsumer;
+    private final LocalTime scrapingTime;
+    private final List<T> locations;
+    private final Source source;
+    private final LocationScrapingProps scrapingProps;
+
+}

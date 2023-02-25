@@ -1,5 +1,6 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
+import com.google.weatherforecastchecker.scraper.Source;
 import lombok.Data;
 
 import java.util.List;

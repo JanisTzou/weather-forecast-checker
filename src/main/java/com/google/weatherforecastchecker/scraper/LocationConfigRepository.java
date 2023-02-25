@@ -1,7 +1,7 @@
-package com.google.weatherforecastchecker;
+package com.google.weatherforecastchecker.scraper;
 
 import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherLocationConfig;
-import com.google.weatherforecastchecker.scraper.forecast.Source;
+import com.google.weatherforecastchecker.scraper.forecast.MeteobluePictorgramsConfig;
 import com.google.weatherforecastchecker.scraper.measurement.ChmuLocationConfig;
 import com.google.weatherforecastchecker.util.CsvFile;
 import lombok.extern.log4j.Log4j2;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.google.weatherforecastchecker.LocationConfigRepository.Headers.*;
+import static com.google.weatherforecastchecker.scraper.LocationConfigRepository.Headers.*;
 
 @Log4j2
 public class LocationConfigRepository {
@@ -39,11 +39,12 @@ public class LocationConfigRepository {
     private static final String sourceConfigFilesFolder = "data_sources";
     private static final String locationsFile = "locations.csv";
     private static final String meteobluePictogramsMappingFile = "meteoblue_pictograms_mapping.csv";
+
     private static final Map<Source, Supplier<List<? extends LocationConfig>>> sourceConfigFiles = new ConcurrentHashMap<>();
 
     static {
         sourceConfigFiles.put(Source.ALADIN_API, () -> getLocationConfigs("aladin_api_config.csv"));
-        sourceConfigFiles.put(Source.ACCUWATHER_API, () -> getAccuWeatherLocations("accuweather_api_config.csv"));
+        sourceConfigFiles.put(Source.ACCUWATHER_API, () -> getAccuWeatherLocationConfis("accuweather_api_config.csv"));
         sourceConfigFiles.put(Source.CLEAR_OUTSIDE_WEB, () -> getLocationConfigs("clearoutside_web_config.csv"));
         sourceConfigFiles.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
         sourceConfigFiles.put(Source.METEOBLUE_WEB, () -> getLocationConfigs("meteoblue_web_config.csv"));
@@ -84,7 +85,7 @@ public class LocationConfigRepository {
                 ).collect(Collectors.toList());
     }
 
-    public static List<AccuWeatherLocationConfig> getAccuWeatherLocations(String configFile) {
+    public static List<AccuWeatherLocationConfig> getAccuWeatherLocationConfis(String configFile) {
         Map<String, LocationConfig> configsByName = getLocationConfigsByName(configFile);
         return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
                 .map(l -> new AccuWeatherLocationConfig(

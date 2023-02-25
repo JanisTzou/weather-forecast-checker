@@ -1,4 +1,4 @@
-package com.google.weatherforecastchecker;
+package com.google.weatherforecastchecker.scraper;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

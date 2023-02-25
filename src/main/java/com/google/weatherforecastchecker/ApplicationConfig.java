@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @Configuration
-public class Config {
+public class ApplicationConfig {
 
     @Bean
     public JsonMapper jsonMapper() {

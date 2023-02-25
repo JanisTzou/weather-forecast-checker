@@ -1,4 +1,4 @@
-package com.google.weatherforecastchecker;
+package com.google.weatherforecastchecker.scraper.forecast;
 
 import lombok.Data;
 

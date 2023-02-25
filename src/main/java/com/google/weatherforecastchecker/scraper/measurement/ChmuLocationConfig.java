@@ -1,7 +1,7 @@
 package com.google.weatherforecastchecker.scraper.measurement;
 
-import com.google.weatherforecastchecker.Location;
-import com.google.weatherforecastchecker.LocationConfig;
+import com.google.weatherforecastchecker.scraper.Location;
+import com.google.weatherforecastchecker.scraper.LocationConfig;
 import lombok.Getter;
 
 import java.util.Collections;

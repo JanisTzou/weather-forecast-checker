@@ -1,6 +1,6 @@
 package com.google.weatherforecastchecker.util;
 
-import com.google.weatherforecastchecker.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
 import org.apache.commons.text.StringSubstitutor;
 
 import java.io.BufferedReader;
@@ -52,7 +52,7 @@ public class Utils {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             List<String> lines = new ArrayList<>();
 
-            while(reader.ready()) {
+            while (reader.ready()) {
                 lines.add(reader.readLine());
             }
             return lines;
@@ -64,7 +64,7 @@ public class Utils {
     public static List<LocalTime> parseCommaSeparatedTimes(String times) {
         if (times != null && !times.isEmpty()) {
             return Arrays.stream(times.split(","))
-                    .map(text -> LocalTime.parse(times, TIME_FORMATTER))
+                    .map(text -> LocalTime.parse(text, TIME_FORMATTER))
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

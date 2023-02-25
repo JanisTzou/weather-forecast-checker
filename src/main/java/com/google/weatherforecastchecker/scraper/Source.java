@@ -1,4 +1,4 @@
-package com.google.weatherforecastchecker.scraper.forecast;
+package com.google.weatherforecastchecker.scraper;
 
 public enum Source {
 

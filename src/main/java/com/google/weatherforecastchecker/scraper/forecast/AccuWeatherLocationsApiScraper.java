@@ -1,7 +1,8 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -34,6 +35,7 @@ public class AccuWeatherLocationsApiScraper {
         this.urlTemplate = urlTemplate;
     }
 
+    // TODO conside something better ...
     @PostConstruct
     public void scrapeLocations() {
         List<AccuWeatherLocationConfig> locationConfigs = LocationConfigRepository.getLocationConfigs(Source.ACCUWATHER_API);

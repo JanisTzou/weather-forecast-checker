@@ -3,23 +3,18 @@ package com.google.weatherforecastchecker.scraper.measurement;
 import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
-import com.google.weatherforecastchecker.scraper.TimedScraping;
-import com.google.weatherforecastchecker.scraper.forecast.Source;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.ScrapingProps;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
-import jakarta.annotation.PostConstruct;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -27,38 +22,38 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Component
-@Profile("chmu-oblacnost")
-public class ChmuScraper {
+@Profile({"chmu-oblacnost", "default"})
+public class ChmuScraper implements CloudCoverageMeasurementScraper<ScrapingProps> {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-yyyy H:mm");
 
-    private final Properties properties;
+    private final ChmuScraperProps properties;
 
-    public ChmuScraper(Properties properties) {
+    public ChmuScraper(ChmuScraperProps properties) {
         this.properties = properties;
     }
 
-    @PostConstruct
-    public void init() {
-        List<CloudCoverageMeasurement> measurements = scrape();
-        for (CloudCoverageMeasurement measurement : measurements) {
-            System.out.println(measurement);
-        }
-    }
-
-
+    @Override
     public List<CloudCoverageMeasurement> scrape() {
         try {
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(properties.getUrl());
             List<HtmlElement> tbodyList = page.getElementsByTagName("tbody").stream().map(d -> (HtmlElement) d).collect(Collectors.toList());
             LocalDateTime dateTime = parseDateTime(tbodyList);
-
             return parseMeasurements(tbodyList, dateTime);
-
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public ScrapingProps getScrapingProps() {
+        return properties;
+    }
+
+    @Override
+    public Source getSource() {
+        return Source.CHMU;
     }
 
     private List<CloudCoverageMeasurement> parseMeasurements(List<HtmlElement> tbodyList, LocalDateTime dateTime) {
@@ -133,21 +128,6 @@ public class ChmuScraper {
             return Optional.of(BigDecimal.valueOf(eights * 100).divide(BigDecimal.valueOf(8), RoundingMode.UP).intValue());
         }
         return Optional.empty();
-    }
-
-    @Data
-    @ConfigurationProperties("chmu.web.measurement")
-    public static class Properties implements TimedScraping {
-
-        private String url;
-        private Duration scrapeEvery;
-        private Integer scrapeAtMinuteOfHour;
-
-        @Override
-        public List<LocalTime> getScrapingTimes() {
-
-            return null;
-        }
     }
 
 }

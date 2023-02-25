@@ -3,13 +3,12 @@ package com.google.weatherforecastchecker.scraper.forecast;
 import com.gargoylesoftware.htmlunit.html.DomElement;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.google.weatherforecastchecker.LocationConfig;
-import com.google.weatherforecastchecker.LocationConfigRepository;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
+import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
+import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -25,19 +24,13 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
 
 @Log4j2
 @Component
-@Profile("clearoutside")
+@Profile({"clearoutside", "default"})
 public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
 
-    private final Properties properties;
+    private final ClearOutsideWebScraperProps properties;
 
-    public ClearOutsideWebScraper(Properties properties) {
+    public ClearOutsideWebScraper(ClearOutsideWebScraperProps properties) {
         this.properties = properties;
-    }
-
-    @PostConstruct
-    public void scrape() {
-        List<LocationConfig> locations = LocationConfigRepository.getLocationConfigs(getSource());
-        scrape(locations);
     }
 
     @Override
@@ -96,7 +89,7 @@ public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public ScrapingProperties getScrapingProperties() {
+    public ForecastScrapingProps getScrapingProps() {
         return properties;
     }
 
@@ -111,10 +104,6 @@ public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
             daysMap.put(date.getDayOfMonth(), date);
         }
         return daysMap;
-    }
-
-    @ConfigurationProperties("clearoutside.web.forecast")
-    public static class Properties extends ScrapingProperties {
     }
 
 }

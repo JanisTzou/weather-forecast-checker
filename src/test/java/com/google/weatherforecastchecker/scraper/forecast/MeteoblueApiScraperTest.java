@@ -1,7 +1,7 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.weatherforecastchecker.Config;
+import com.google.weatherforecastchecker.ApplicationConfig;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = { Config.class })
+@ContextConfiguration(classes = { ApplicationConfig.class })
 class MeteoblueApiScraperTest {
 
     @Autowired

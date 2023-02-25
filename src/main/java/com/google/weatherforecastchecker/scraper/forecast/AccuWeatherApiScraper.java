@@ -2,13 +2,12 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.LocationConfigRepository;
+import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
+import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -23,21 +22,16 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Component
-@Profile("accuweather")
+@Profile({"accuweather", "default"})
 public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocationConfig> {
 
     private final RestTemplate restTemplate;
-    private final Properties properties;
+    private final AccuWeatherApiScraperProps properties;
 
     public AccuWeatherApiScraper(RestTemplate restTemplate,
-                                 Properties properties) {
+                                 AccuWeatherApiScraperProps properties) {
         this.restTemplate = restTemplate;
         this.properties = properties;
-    }
-
-    @PostConstruct
-    public void init() {
-        scrape(LocationConfigRepository.getLocationConfigs(getSource()));
     }
 
     @Override
@@ -65,7 +59,7 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
     }
 
     @Override
-    public ScrapingProperties getScrapingProperties() {
+    public ForecastScrapingProps getScrapingProps() {
         return properties;
     }
 
@@ -78,10 +72,6 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
 
         @JsonProperty("CloudCover")
         private int cloudCover;
-    }
-
-    @ConfigurationProperties("accuweather.api.forecast")
-    public static class Properties extends ScrapingProperties {
     }
 
 }

@@ -1,6 +1,6 @@
 package com.google.weatherforecastchecker.scraper.forecast;
 
-import com.google.weatherforecastchecker.LocationConfig;
+import com.google.weatherforecastchecker.scraper.LocationConfig;
 import lombok.Getter;
 import lombok.ToString;
 

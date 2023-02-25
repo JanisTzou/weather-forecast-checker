@@ -10,6 +10,6 @@ public class CloudCoverageMeasurement {
     private final LocalDateTime dateTime;
     private final String location;
     private final String description;
-    private final Integer covered; // 0/8 - 8/8 ... jasno ... zatazeno -> convert to %
+    private final Integer covered;
 
 }
