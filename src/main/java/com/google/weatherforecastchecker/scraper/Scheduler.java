@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ public class Scheduler {
     private static class ScrapeLocations<T extends LocationConfig, R> implements Runnable {
 
         private final List<T> locations = new ArrayList<>();
-        private final Queue<T> runQueue = new LinkedList<>();
+        private final Queue<T> runQueue = new ConcurrentLinkedQueue<>();
         private final ScrapingByLocation<T, R> scraping;
 
         public ScrapeLocations(ScrapingByLocation<T, R> scraping) {
@@ -43,8 +44,8 @@ public class Scheduler {
                 // TODO remove from queue ...
                 // TODO somehow we need to know if there was a problem or not ... if not handle the result, if yes then repeat ...
                 try {
-//                    Optional<R> result = scraping.getScraping().apply(location).call(); // TODO uncomment again ...
-                    Optional<R> result = Optional.empty();
+                    log.info("Scraping location {} from {}", location.getName(), scraping.getSource());
+                    Optional<R> result = scraping.getScraping().apply(location).call(); // TODO uncomment again ...
                     if (result.isPresent()) {
                         scraping.getResultConsumer().accept(result.get());
                     } else {

@@ -21,7 +21,11 @@ public class CsvLine {
     }
 
     public String getString(String headerName) {
-        return values.get(pos(headerName));
+        int pos = pos(headerName);
+        if (pos == -1) {
+            throw new IllegalArgumentException("No header found for name = " + headerName);
+        }
+        return values.get(pos);
     }
 
     public boolean getBoolean(String headerName) {

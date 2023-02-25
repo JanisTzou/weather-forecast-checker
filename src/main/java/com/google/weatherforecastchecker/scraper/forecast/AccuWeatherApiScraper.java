@@ -2,8 +2,7 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
-import com.google.weatherforecastchecker.scraper.Source;
+import com.google.weatherforecastchecker.scraper.*;
 import com.google.weatherforecastchecker.util.Utils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,10 +13,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -27,11 +30,14 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
 
     private final RestTemplate restTemplate;
     private final AccuWeatherApiScraperProps properties;
+    private final LocationConfigRepository locationConfigRepository;
 
     public AccuWeatherApiScraper(RestTemplate restTemplate,
-                                 AccuWeatherApiScraperProps properties) {
+                                 AccuWeatherApiScraperProps properties,
+                                 LocationConfigRepository locationConfigRepository) {
         this.restTemplate = restTemplate;
         this.properties = properties;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -51,6 +57,11 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
             log.error("Failed to scrape page ", e);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public List<AccuWeatherLocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getAccuWeatherLocationConfigs();
     }
 
     @Override

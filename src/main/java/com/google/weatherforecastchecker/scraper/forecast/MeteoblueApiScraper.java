@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
 import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
 import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
 import lombok.Data;
@@ -28,11 +29,14 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
 
     private final RestTemplate restTemplate;
     private final MeteoblueApiScraperProps props;
+    private final LocationConfigRepository locationConfigRepository;
 
     public MeteoblueApiScraper(RestTemplate restTemplate,
-                               MeteoblueApiScraperProps props) {
+                               MeteoblueApiScraperProps props,
+                               LocationConfigRepository locationConfigRepository) {
         this.restTemplate = restTemplate;
         this.props = props;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -47,6 +51,11 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
             log.error("Failed to scrape page ", e);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public List<LocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getLocationConfigs(getSource());
     }
 
     @Override

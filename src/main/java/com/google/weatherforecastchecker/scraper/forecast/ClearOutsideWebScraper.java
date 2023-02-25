@@ -6,6 +6,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
 import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
 import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
 import lombok.extern.log4j.Log4j2;
@@ -28,9 +29,11 @@ import static com.google.weatherforecastchecker.htmlunit.HtmlUnitUtils.hasCssCla
 public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
 
     private final ClearOutsideWebScraperProps properties;
+    private final LocationConfigRepository locationConfigRepository;
 
-    public ClearOutsideWebScraper(ClearOutsideWebScraperProps properties) {
+    public ClearOutsideWebScraper(ClearOutsideWebScraperProps properties, LocationConfigRepository locationConfigRepository) {
         this.properties = properties;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -81,6 +84,11 @@ public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
         }
 
         return Optional.empty();
+    }
+
+    @Override
+    public List<LocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getLocationConfigs(getSource());
     }
 
     @Override

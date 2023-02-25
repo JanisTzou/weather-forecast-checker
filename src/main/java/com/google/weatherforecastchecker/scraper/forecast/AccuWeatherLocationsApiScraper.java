@@ -2,7 +2,6 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
-import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -28,17 +27,21 @@ public class AccuWeatherLocationsApiScraper {
 
     private final RestTemplate restTemplate;
     private final String urlTemplate;
+    private final LocationConfigRepository locationConfigRepository;
 
     public AccuWeatherLocationsApiScraper(RestTemplate restTemplate,
-                                          @Value("${accuweather.api.locations.url}") String urlTemplate) {
+                                          @Value("${accuweather.api.locations.url}") String urlTemplate,
+                                          LocationConfigRepository locationConfigRepository) {
         this.restTemplate = restTemplate;
         this.urlTemplate = urlTemplate;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     // TODO conside something better ...
+    //  ... can you rework to use the locations based stuff?
     @PostConstruct
     public void scrapeLocations() {
-        List<AccuWeatherLocationConfig> locationConfigs = LocationConfigRepository.getLocationConfigs(Source.ACCUWATHER_API);
+        List<AccuWeatherLocationConfig> locationConfigs = locationConfigRepository.getAccuWeatherLocationConfigs();
         for (AccuWeatherLocationConfig locationConfig : locationConfigs) {
             scrapeLocationKey(locationConfig).ifPresent(dto -> {
                 System.out.println("LOCATION=" + locationConfig.getName() + ",KEY=" + dto.getKey() + ",DETAILS=" + dto);

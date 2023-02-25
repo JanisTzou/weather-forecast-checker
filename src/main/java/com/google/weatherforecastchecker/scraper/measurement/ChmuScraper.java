@@ -28,9 +28,11 @@ public class ChmuScraper implements CloudCoverageMeasurementScraper<ScrapingProp
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-yyyy H:mm");
 
     private final ChmuScraperProps properties;
+    private final LocationConfigRepository locationConfigRepository;
 
-    public ChmuScraper(ChmuScraperProps properties) {
+    public ChmuScraper(ChmuScraperProps properties, LocationConfigRepository locationConfigRepository) {
         this.properties = properties;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class ChmuScraper implements CloudCoverageMeasurementScraper<ScrapingProp
         List<CloudCoverageMeasurement> measurements = new ArrayList<>();
 
         if (table2.isPresent()) {
-            Map<String, ChmuLocationConfig> locationsByStations = getLocationsByStations(LocationConfigRepository.getLocationConfigs(Source.CHMU));
+            Map<String, ChmuLocationConfig> locationsByStations = getLocationsByStations(locationConfigRepository.getChmuLocationConfigs());
             DomNodeList<HtmlElement> rows = table2.get().getElementsByTagName("tr");
             for (int rowNo = 1; rowNo < rows.size(); rowNo++) { // skip first row containing headers
                 HtmlElement row = rows.get(rowNo);

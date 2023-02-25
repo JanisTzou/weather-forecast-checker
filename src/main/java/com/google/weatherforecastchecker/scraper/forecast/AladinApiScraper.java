@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
 import com.google.weatherforecastchecker.scraper.LocationConfig;
+import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
 import com.google.weatherforecastchecker.scraper.Source;
 import com.google.weatherforecastchecker.util.Utils;
 import jakarta.annotation.Nullable;
@@ -30,11 +31,13 @@ public class AladinApiScraper implements ForecastScraper<LocationConfig> {
     // https://stackoverflow.com/questions/51958805/spring-boot-mvc-resttemplate-where-to-initialize-a-resttemplate-for-a-mvc-a
     private final RestTemplate restTemplate;
     private final AladinApiScraperProps properties;
+    private final LocationConfigRepository locationConfigRepository;
 
     public AladinApiScraper(RestTemplate jsonAsTextRestTemplate,
-                            AladinApiScraperProps properties) {
+                            AladinApiScraperProps properties, LocationConfigRepository locationConfigRepository) {
         this.restTemplate = jsonAsTextRestTemplate;
         this.properties = properties;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -54,6 +57,11 @@ public class AladinApiScraper implements ForecastScraper<LocationConfig> {
 //        log.info(url);
         ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class); // content is text/content -> parse manually ...
         return toForecast(locationConfig.getName(), resp.getBody());
+    }
+
+    @Override
+    public List<LocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getLocationConfigs(getSource());
     }
 
     public Optional<Forecast> toForecast(String location, @Nullable ForecastDto forecastDto) {

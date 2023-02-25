@@ -41,11 +41,12 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
     // TODO add validation of the produced hourly forecast ...
 
     private final MeteoblueWebScraperProps props;
+    private final LocationConfigRepository locationConfigRepository;
 
-    private static final Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs = LocationConfigRepository.getMeteobluePictogramsConfigs();
-
-    public MeteoblueWebScraper(MeteoblueWebScraperProps props) {
+    public MeteoblueWebScraper(MeteoblueWebScraperProps props,
+                               LocationConfigRepository locationConfigRepository) {
         this.props = props;
+        this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
@@ -58,6 +59,11 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
             return Optional.of(new Forecast(getSource(), locationConfig.getName(), hourForecasts));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public List<LocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getLocationConfigs(getSource());
     }
 
     @Override
@@ -76,6 +82,8 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
             String url = Utils.fillTemplate(props.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
+
+            Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs = locationConfigRepository.getMeteobluePictogramsConfigs();
 
             // TODO maybe do the same with xPaths ?
             List<DomNode> threeHourlyView = getHtmlElementDescendants(page, d -> hasCssClass(d, "three-hourly-view"));
@@ -104,7 +112,7 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
                         return number.stream();
                     })
                     // TODO the descriptions of pictorgrams would be good as well to have ... so do not get the mapping of the coverage here ...
-                    .flatMap(this::convertThreeHourlyToOneHourly)
+                    .flatMap(n -> convertThreeHourlyToOneHourly(n, pictogramsConfigs))
                     .collect(Collectors.toList());
 
             Optional<LocalDate> date = parseDate(dateTimeStr.get());
@@ -121,7 +129,7 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
         return Collections.emptyList();
     }
 
-    private Stream<Integer> convertThreeHourlyToOneHourly(Integer n) {
+    private Stream<Integer> convertThreeHourlyToOneHourly(Integer n, Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs) {
         return IntStream.rangeClosed(1, 3).map(i -> pictogramsConfigs.get(n).getCloudCoverage()).boxed();
     }
 
