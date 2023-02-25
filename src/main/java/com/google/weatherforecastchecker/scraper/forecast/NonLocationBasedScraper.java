@@ -14,10 +14,9 @@ public interface NonLocationBasedScraper<R> extends Scraper<ScrapingProps> {
         if (properties.isEnabled()) {
             if (properties.isScrapeOnceImmediately()) {
                 schedule(resultConsumer, schedulers, properties, null);
-            } else {
-                for (LocalTime scrapingTime : properties.getScrapingTimes()) {
-                    schedule(resultConsumer, schedulers, properties, scrapingTime);
-                }
+            }
+            for (LocalTime scrapingTime : properties.getScrapingTimes()) {
+                schedule(resultConsumer, schedulers, properties, scrapingTime);
             }
         }
     }
