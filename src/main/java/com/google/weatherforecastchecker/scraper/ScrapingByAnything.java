@@ -14,15 +14,14 @@ import java.util.function.Function;
  * @param <R> result of the scraping
  */
 @Data
-public class ScrapingByLocation<T extends LocationConfig, R> {
+public class ScrapingByAnything<R> {
 
-    private final Function<T, Callable<Optional<R>>> scraping;
+    private final Callable<Optional<R>> scraping;
     private final Consumer<R> resultConsumer;
 
     @Nullable
     private final LocalTime scrapingTime;
-    private final List<T> locations;
     private final Source source;
-    private final LocationScrapingProps scrapingProps;
+    private final ScrapingProps scrapingProps;
 
 }

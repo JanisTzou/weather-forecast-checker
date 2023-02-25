@@ -7,6 +7,7 @@ import com.google.weatherforecastchecker.htmlunit.HtmlUnitClientFactory;
 import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
 import com.google.weatherforecastchecker.scraper.ScrapingProps;
 import com.google.weatherforecastchecker.scraper.Source;
+import com.google.weatherforecastchecker.scraper.forecast.NonLocationBasedScraper;
 import com.google.weatherforecastchecker.util.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Profile;
@@ -23,29 +24,32 @@ import java.util.stream.Collectors;
 @Log4j2
 @Component
 @Profile({"chmu-oblacnost", "default"})
-public class ChmuScraper implements CloudCoverageMeasurementScraper<ScrapingProps> {
+public class ChmuMeasurementsScraper implements NonLocationBasedScraper<CloudCoverageMeasurements> {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-yyyy H:mm");
 
     private final ChmuScraperProps properties;
     private final LocationConfigRepository locationConfigRepository;
 
-    public ChmuScraper(ChmuScraperProps properties, LocationConfigRepository locationConfigRepository) {
+    public ChmuMeasurementsScraper(ChmuScraperProps properties, LocationConfigRepository locationConfigRepository) {
         this.properties = properties;
         this.locationConfigRepository = locationConfigRepository;
     }
 
     @Override
-    public List<CloudCoverageMeasurement> scrape() {
+    public Optional<CloudCoverageMeasurements> scrape() {
         try {
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(properties.getUrl());
             List<HtmlElement> tbodyList = page.getElementsByTagName("tbody").stream().map(d -> (HtmlElement) d).collect(Collectors.toList());
             LocalDateTime dateTime = parseDateTime(tbodyList);
-            return parseMeasurements(tbodyList, dateTime);
+            List<CloudCoverageMeasurement> measurements = parseMeasurements(tbodyList, dateTime);
+            if (!measurements.isEmpty()) {
+                return Optional.of(new CloudCoverageMeasurements(measurements));
+            }
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
-            return Collections.emptyList();
         }
+        return Optional.empty();
     }
 
     @Override

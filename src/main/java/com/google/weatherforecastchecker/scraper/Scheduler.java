@@ -2,22 +2,38 @@ package com.google.weatherforecastchecker.scraper;
 
 import com.google.weatherforecastchecker.util.DateTimeUtils;
 import com.google.weatherforecastchecker.util.Utils;
+import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @Log4j2
 public class Scheduler {
 
     private static final Duration oneDay = Duration.ofDays(1L);
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+    public <R> void schedule(ScrapingByAnything<R> scraping) {
+        if (scraping.getScrapingProps().isScrapeOnceImmediately()) {
+            log.info("Immediately scraping from source {}", scraping.getSource());
+            ScrapeNonLocations<R> scrapeLocations = new ScrapeNonLocations<>(scraping);
+            executor.schedule(scrapeLocations, 0, TimeUnit.SECONDS);
+        } else {
+            Duration initialDelay = DateTimeUtils.untilNextTime(LocalTime.now(), scraping.getScrapingTime(), ChronoUnit.SECONDS);
+            log.info("Scheduling scraping with initial delay {} from source {}", initialDelay, scraping.getSource());
+            ScrapeNonLocations<R> scrapeLocations = new ScrapeNonLocations<>(scraping);
+            executor.scheduleAtFixedRate(scrapeLocations, initialDelay.toMillis(), oneDay.toMillis(), TimeUnit.MILLISECONDS);
+        }
+    }
 
     public <T extends LocationConfig, R> void schedule(ScrapingByLocation<T, R> scraping) {
         if (scraping.getScrapingProps().isScrapeOnceImmediately()) {
@@ -32,40 +48,94 @@ public class Scheduler {
         }
     }
 
-    private static class ScrapeLocations<T extends LocationConfig, R> implements Runnable {
+    @Data
+    abstract static class Scrape<T, R> implements Runnable {
+        protected final Source source;
+        protected final Consumer<R> resultConsumer;
+        protected final Duration delayBetweenRequests;
 
-        private final List<T> locations = new ArrayList<>();
-        private final Queue<T> runQueue = new ConcurrentLinkedQueue<>();
-        private final ScrapingByLocation<T, R> scraping;
+        protected List<ScrapingTask<T>> scrapingTasks;
+        protected final Queue<ScrapingTask<T>> taskQueue = new LinkedList<>();
 
-        public ScrapeLocations(ScrapingByLocation<T, R> scraping) {
-            locations.addAll(scraping.getLocations());
+        protected abstract Optional<R> scrape(ScrapingTask<T> next) throws Exception;
+
+        @Override
+        public void run() {
+            try {
+                taskQueue.addAll(scrapingTasks);
+                while (!taskQueue.isEmpty()) {
+                    ScrapingTask<T> next = taskQueue.poll();
+                    next.attemptCount.incrementAndGet();
+                    try {
+                        Optional<R> result = scrape(next);
+                        if (result.isPresent()) {
+                            resultConsumer.accept(result.get());
+                        } else {
+                            boolean retry = enqueueAgain(next);
+                            if (retry) {
+                                log.warn("Failed to scrape data from {}, will try again ", source);
+                            } else {
+                                log.warn("Failed to scrape data from {}, will not try any more ...", source);
+                            }
+                        }
+                    } catch (Exception e) {
+                        boolean retry = enqueueAgain(next);
+                        String retryMsg = retry ? ", will try again" : "";
+                        log.error("Error while scraping from source {} {}", source, retryMsg, e); // TODO provide some description ?
+                    }
+                    Utils.sleep(delayBetweenRequests.toMillis());
+                }
+            } catch (Exception e) {
+                log.error("Error running scraping task!", e);
+            }
+        }
+
+        private boolean enqueueAgain(ScrapingTask<T> next) {
+            if (next.attemptCount.get() < 3) {
+                taskQueue.add(next);
+                return true;
+            }
+            return false;
+        }
+    }
+
+
+    private static class ScrapeNonLocations<R> extends Scrape<Void, R> {
+        private final ScrapingByAnything<R> scraping;
+
+        private ScrapeNonLocations(ScrapingByAnything<R> scraping) {
+            super(scraping.getSource(), scraping.getResultConsumer(), scraping.getScrapingProps().getDelayBetweenRequests());
+            this.scrapingTasks = List.of(new ScrapingTask<>(null));
             this.scraping = scraping;
         }
 
         @Override
-        public void run() {
-            runQueue.addAll(locations);
-            for (T location : runQueue) {
-                // TODO remove from queue ...
-                // TODO somehow we need to know if there was a problem or not ... if not handle the result, if yes then repeat ...
-                try {
-                    log.info("Scraping location {} from {}", location.getName(), scraping.getSource());
-//                    Optional<R> result = scraping.getScraping().apply(location).call(); // TODO uncomment again ...
-                    Optional<R> result = Optional.empty();
-                    if (result.isPresent()) {
-                        scraping.getResultConsumer().accept(result.get());
-                    } else {
-                        // TODO...
-                    }
-                    Utils.sleep(scraping.getScrapingProps().getDelayBetweenLocations().toMillis());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                // TODO apply delay ...
-                // TODO add back to queue if there is an error ... N times ...
-            }
+        protected Optional<R> scrape(ScrapingTask<Void> next) throws Exception {
+            log.info("Scraping from {}", source);
+            return scraping.getScraping().call();
         }
+    }
+
+
+    private static class ScrapeLocations<T extends LocationConfig, R> extends Scrape<T, R> {
+        private final ScrapingByLocation<T, R> scraping;
+
+        public ScrapeLocations(ScrapingByLocation<T, R> scraping) {
+            super(scraping.getSource(), scraping.getResultConsumer(), scraping.getScrapingProps().getDelayBetweenRequests());
+            this.scrapingTasks = scraping.getLocations().stream().map(ScrapingTask::new).collect(Collectors.toList());
+            this.scraping = scraping;
+        }
+
+        protected Optional<R> scrape(ScrapingTask<T> next) throws Exception {
+            log.info("Scraping {} from {}", next.item.getName(), source);
+            return scraping.getScraping().apply(next.item).call();
+        }
+    }
+
+    @Data
+    private static class ScrapingTask<T> {
+        private final AtomicInteger attemptCount = new AtomicInteger(0);
+        private final T item;
     }
 
 }

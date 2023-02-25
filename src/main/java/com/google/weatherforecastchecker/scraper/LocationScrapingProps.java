@@ -14,7 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 public abstract class LocationScrapingProps extends ScrapingProps {
 
-    private Duration delayBetweenLocations;
     private String scrapingTimes;
 
     @Override
