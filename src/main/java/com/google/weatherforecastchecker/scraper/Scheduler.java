@@ -20,10 +20,16 @@ public class Scheduler {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public <T extends LocationConfig, R> void schedule(ScrapingByLocation<T, R> scraping) {
-        Duration initialDelay = DateTimeUtils.untilNextTime(LocalTime.now(), scraping.getScrapingTime(), ChronoUnit.SECONDS);
-        log.info("Scheduling scraping of {} locations with initial delay {} from source {}", scraping.getLocations().size(), initialDelay, scraping.getSource());
-        ScrapeLocations<T, R> scrapeLocations = new ScrapeLocations<>(scraping);
-        executor.scheduleAtFixedRate(scrapeLocations, initialDelay.toMillis(), oneDay.toMillis(), TimeUnit.MILLISECONDS);
+        if (scraping.getScrapingProps().isScrapeOnceImmediately()) {
+            log.info("Immediately scraping {} locations from source {}", scraping.getLocations().size(), scraping.getSource());
+            ScrapeLocations<T, R> scrapeLocations = new ScrapeLocations<>(scraping);
+            executor.schedule(scrapeLocations, 0, TimeUnit.SECONDS);
+        } else {
+            Duration initialDelay = DateTimeUtils.untilNextTime(LocalTime.now(), scraping.getScrapingTime(), ChronoUnit.SECONDS);
+            log.info("Scheduling scraping of {} locations with initial delay {} from source {}", scraping.getLocations().size(), initialDelay, scraping.getSource());
+            ScrapeLocations<T, R> scrapeLocations = new ScrapeLocations<>(scraping);
+            executor.scheduleAtFixedRate(scrapeLocations, initialDelay.toMillis(), oneDay.toMillis(), TimeUnit.MILLISECONDS);
+        }
     }
 
     private static class ScrapeLocations<T extends LocationConfig, R> implements Runnable {
@@ -45,7 +51,8 @@ public class Scheduler {
                 // TODO somehow we need to know if there was a problem or not ... if not handle the result, if yes then repeat ...
                 try {
                     log.info("Scraping location {} from {}", location.getName(), scraping.getSource());
-                    Optional<R> result = scraping.getScraping().apply(location).call(); // TODO uncomment again ...
+//                    Optional<R> result = scraping.getScraping().apply(location).call(); // TODO uncomment again ...
+                    Optional<R> result = Optional.empty();
                     if (result.isPresent()) {
                         scraping.getResultConsumer().accept(result.get());
                     } else {

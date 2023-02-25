@@ -15,12 +15,5 @@ import java.util.List;
 public abstract class ForecastScrapingProps extends LocationScrapingProps {
 
     private int days;
-    private String scrapingTimes;
-    private Duration delayBetweenLocations;
-
-    @Override
-    public List<LocalTime> getScrapingTimes() {
-        return Utils.parseCommaSeparatedTimes(scrapingTimes);
-    }
 
 }

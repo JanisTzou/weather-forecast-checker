@@ -1,6 +1,6 @@
 package com.google.weatherforecastchecker.scraper;
 
-import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherLocationConfig;
+import com.google.weatherforecastchecker.scraper.forecast.AccuWeatherApiLocationConfig;
 import com.google.weatherforecastchecker.scraper.forecast.MeteobluePictorgramsConfig;
 import com.google.weatherforecastchecker.scraper.measurement.ChmuLocationConfig;
 import com.google.weatherforecastchecker.util.CsvFile;
@@ -28,13 +28,14 @@ public class LocationConfigRepository {
 
     @PostConstruct
     private void init() {
+        locationsConfigsLoaders.put(Source.ACCUWATHER_LOCATIONS_API, () -> getLocationConfigs("accuweather_locations_api_config.csv"));
         locationsConfigsLoaders.put(Source.ALADIN_API, () -> getLocationConfigs("aladin_api_config.csv"));
         locationsConfigsLoaders.put(Source.CLEAR_OUTSIDE_WEB, () -> getLocationConfigs("clearoutside_web_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_WEB, () -> getLocationConfigs("meteoblue_web_config.csv"));
     }
 
-    public List<AccuWeatherLocationConfig> getAccuWeatherLocationConfigs() {
+    public List<AccuWeatherApiLocationConfig> getAccuWeatherLocationConfigs() {
         return getAccuWeatherLocationConfigs("accuweather_api_config.csv");
     }
 
@@ -70,10 +71,10 @@ public class LocationConfigRepository {
                 ).collect(Collectors.toList());
     }
 
-    List<AccuWeatherLocationConfig> getAccuWeatherLocationConfigs(String configFile) {
+    List<AccuWeatherApiLocationConfig> getAccuWeatherLocationConfigs(String configFile) {
         Map<String, LocationConfig> configsByName = getLocationConfigsByName(configFile);
         return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
-                .map(l -> new AccuWeatherLocationConfig(
+                .map(l -> new AccuWeatherApiLocationConfig(
                         configsByName.get(l.getString(LOCATION_NAME)),
                         l.getString(ACCUWEATHER_LOCATION_KEY))
                 ).collect(Collectors.toList());

@@ -6,11 +6,11 @@ import lombok.ToString;
 
 @ToString
 @Getter
-public class AccuWeatherLocationConfig extends LocationConfig {
+public class AccuWeatherApiLocationConfig extends LocationConfig {
 
-    private String locationKey;
+    private final String locationKey;
 
-    public AccuWeatherLocationConfig(LocationConfig locationConfig, String locationKey) {
+    public AccuWeatherApiLocationConfig(LocationConfig locationConfig, String locationKey) {
         super(locationConfig);
         this.locationKey = locationKey;
     }

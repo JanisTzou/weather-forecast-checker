@@ -13,20 +13,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Log4j2
 @Component
-@Profile({"accuweather", "default"})
-public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocationConfig> {
+@Profile({"accuweather-locations", "default"})
+public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherApiLocationConfig> {
 
     private final RestTemplate restTemplate;
     private final AccuWeatherApiScraperProps properties;
@@ -41,7 +37,7 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
     }
 
     @Override
-    public Optional<Forecast> scrape(AccuWeatherLocationConfig locationConfig) {
+    public Optional<Forecast> scrape(AccuWeatherApiLocationConfig locationConfig) {
         try {
             if (locationConfig.getLocationKey() != null) {
                 Map<String, Object> values = Map.of("locationKey", locationConfig.getLocationKey());
@@ -52,6 +48,7 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
                     List<HourForecast> forecasts = Arrays.stream(resp.getBody()).map(dto -> new HourForecast(dto.getDateTime(), dto.getCloudCover(), null)).collect(Collectors.toList());
                     return Optional.of(new Forecast(getSource(), locationConfig.getName(), forecasts));
                 }
+                AccuWeatherApiUtils.logRemainingRateLimit(resp);
             }
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
@@ -60,7 +57,7 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherLocatio
     }
 
     @Override
-    public List<AccuWeatherLocationConfig> getLocationConfigs() {
+    public List<AccuWeatherApiLocationConfig> getLocationConfigs() {
         return locationConfigRepository.getAccuWeatherLocationConfigs();
     }
 

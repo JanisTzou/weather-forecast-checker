@@ -1,5 +1,6 @@
 package com.google.weatherforecastchecker.scraper;
 
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 import java.time.LocalTime;
@@ -18,6 +19,8 @@ public class ScrapingByLocation<T extends LocationConfig, R> {
 
     private final Function<T, Callable<Optional<R>>> scraping;
     private final Consumer<R> resultConsumer;
+
+    @Nullable
     private final LocalTime scrapingTime;
     private final List<T> locations;
     private final Source source;
