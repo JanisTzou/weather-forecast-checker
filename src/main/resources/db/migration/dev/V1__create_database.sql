@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS provider_tbl
     CONSTRAINT uc_provider_tbl_name UNIQUE (name)
 );
 
-INSERT INTO source_tbl (name)
+INSERT INTO provider_tbl (name)
 VALUES ('ACCUWATHER'),
        ('ALADIN'),
        ('CLEAR_OUTSIDE'),
