@@ -98,8 +98,8 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
                     .map(e -> e.getAttribute("datetime"))
                     .findFirst();
 
-            // should get 24 values // TODO validation
-            List<Integer> hourCloudCoverages = threeHourlyView.stream()
+            // should get 24 values - each for 8 from the web and we "spread" x3 ...
+            List<Integer> iconNumbers = threeHourlyView.stream()
                     .findFirst().stream().flatMap(e -> ((HtmlElement) e).getElementsByTagName("tr").stream())
                     .filter(e -> hasCssClass(e, "icons"))
                     .findFirst()
@@ -111,19 +111,27 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
                         Optional<Integer> number = Utils.getFirstMatch(pictogramUrl, "\\d+_[day|night]").map(m -> m.split("_")[0]).map(Integer::parseInt);
                         return number.stream();
                     })
-                    // TODO the descriptions of pictorgrams would be good as well to have ... so do not get the mapping of the coverage here ...
-                    .flatMap(n -> convertThreeHourlyToOneHourly(n, pictogramsConfigs))
+                    .flatMap(this::convertThreeHourlyToOneHourly)
                     .collect(Collectors.toList());
 
-            Optional<LocalDate> date = parseDate(dateTimeStr.get());
+            if (iconNumbers.size() == 24 && dateTimeStr.isPresent()) {
+                Optional<LocalDate> date = parseDate(dateTimeStr.get());
+                if (date.isPresent()) {
+                    LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
+                    return IntStream.rangeClosed(0, iconNumbers.size() - 1)
+                            .mapToObj(hourNo -> {
+                                Integer iconNo = iconNumbers.get(hourNo);
+                                Integer cloudCoverageTotal = getCloudCoverageTotal(pictogramsConfigs, iconNo);
+                                return new HourlyForecast(dateTime.plusHours(hourNo), cloudCoverageTotal, "icon_" + iconNo);
+                            })
+                            .collect(Collectors.toList());
+                } else {
+                    log.error("Failed to parse dateTime = {}", dateTimeStr.orElse(null));
+                }
+            } else {
+                log.error("Failed to scrape data: found icon count = {}, scraped dateTime = {}", iconNumbers.size(), dateTimeStr.orElse(null));
+            }
 
-            LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
-
-            // TODO we also want to get the descriptions here !
-
-            return IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
-                    .mapToObj(hourNo -> new HourlyForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
-                    .collect(Collectors.toList());
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
@@ -131,8 +139,20 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
         return Collections.emptyList();
     }
 
-    private Stream<Integer> convertThreeHourlyToOneHourly(Integer n, Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs) {
-        return IntStream.rangeClosed(1, 3).map(i -> pictogramsConfigs.get(n).getCloudCoverage()).boxed();
+    private Integer getCloudCoverageTotal(Map<Integer, MeteobluePictorgramsConfig> pictogramsConfigs, Integer iconNo) {
+        MeteobluePictorgramsConfig config = pictogramsConfigs.get(iconNo);
+        Integer cloudCoverageTotal;
+        if (config == null) {
+            log.error("Failed to find pictogram config for icon no = {}", iconNo);
+            cloudCoverageTotal = null;
+        } else {
+            cloudCoverageTotal = config.getCloudCoverage();
+        }
+        return cloudCoverageTotal;
+    }
+
+    private Stream<Integer> convertThreeHourlyToOneHourly(Integer iconNo) {
+        return IntStream.rangeClosed(1, 3).map(i -> iconNo).boxed();
     }
 
     private Optional<LocalDate> parseDate(String date) {
