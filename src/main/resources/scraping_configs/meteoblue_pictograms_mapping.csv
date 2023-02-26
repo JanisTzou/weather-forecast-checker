@@ -11,16 +11,16 @@ Nr|Description|Total Cloud Coverage
 10|Mixed with some thunderstorm clouds possible|90
 11|Mixed with few cirrus with some thunderstorm clouds possible|100
 12|Mixed with cirrus and some thunderstorm clouds possible|100
-13|Clear but hazy|0
+13|Clear but hazy|10
 14|Clear but hazy with few cirrus|10
 15|Clear but hazy with cirrus|20
 16|Fog/low stratus clouds|30
 17|Fog/low stratus clouds with few cirrus|40
 18|Fog/low stratus clouds with cirrus|50
-19|Mostly cloudy|60
+19|Mostly cloudy|85
 20|Mostly cloudy and few cirrus|70
 21|Mostly cloudy and cirrus|80
-22|Overcast|90
+22|Overcast|100
 23|Overcast with rain|100
 24|Overcast with snow|100
 25|Overcast with heavy rain|100
@@ -30,7 +30,7 @@ Nr|Description|Total Cloud Coverage
 29|Storm with heavy snow|100
 30|Heavy rain, thunderstorms likely|100
 31|Mixed with showers|80
-32|Mixed with snow showers|80
+32|Mixed with snow showers|55
 33|Overcast with light rain|100
 34|Overcast with light snow|100
 35|Overcast with mixture of snow and rain|100
