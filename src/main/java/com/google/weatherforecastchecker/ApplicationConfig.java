@@ -7,6 +7,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -14,6 +16,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 @Configuration
+@PropertySource("classpath:application.properties")
+@PropertySource("classpath:scraping.properties")
 public class ApplicationConfig {
 
     @Bean

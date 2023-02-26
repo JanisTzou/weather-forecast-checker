@@ -59,7 +59,7 @@ public class ChmuMeasurementsScraper implements NonLocationBasedScraper<CloudCov
 
     @Override
     public Source getSource() {
-        return Source.CHMU;
+        return Source.CHMU_WEB;
     }
 
     private List<CloudCoverageMeasurement> parseMeasurements(List<HtmlElement> tbodyList, LocalDateTime dateTime) {
@@ -77,15 +77,21 @@ public class ChmuMeasurementsScraper implements NonLocationBasedScraper<CloudCov
                     Optional<Integer> pokrytiOblohyInt = pokrytiOblohyStr.flatMap(d -> Utils.getFirstMatch(d, "\\d\\/\\d")).map(m -> m.split("/")[0]).map(Integer::parseInt);
                     Optional<Integer> pokrytiOblohyPercent = pokrytiOblohyInt.flatMap(this::fractionToPercentage);
                     ChmuLocationConfig location = locationsByStations.get(stanice.get());
-                    String locationName = location != null ? location.getName() : null;
 
-                    CloudCoverageMeasurement measurement = new CloudCoverageMeasurement(
-                            dateTime,
-                            locationName,
-                            pokrytiOblohyStr.orElse(""),
-                            pokrytiOblohyPercent.orElse(null)
-                    );
-                    measurements.add(measurement);
+                    if (location != null) {
+                        CloudCoverageMeasurement measurement = new CloudCoverageMeasurement(
+                                LocalDateTime.now(),
+                                dateTime,
+                                location.getLocation(),
+                                pokrytiOblohyStr.orElse(""),
+                                pokrytiOblohyPercent.orElse(null),
+                                getSource()
+                        );
+                        measurements.add(measurement);
+                    } else {
+                        log.error("Failed to find location for station = {}", stanice.get());
+                    }
+
                 } else {
                     log.warn("Failed to scrape stanice!");
                 }

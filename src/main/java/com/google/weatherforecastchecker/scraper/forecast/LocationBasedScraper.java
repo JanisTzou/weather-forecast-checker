@@ -19,7 +19,7 @@ public interface LocationBasedScraper<T extends LocationConfig, R> extends Scrap
         if (properties.isEnabled()) {
             if (properties.isScrapeOnceImmediately()) {
                 List<T> locs = getEnabledLocationConfigs().collect(Collectors.toList());
-                schedule(resultConsumer, schedulers, properties, null, locs);
+                schedule(resultConsumer, schedulers, properties, null, locs, true);
             }
             Map<LocalTime, List<T>> locationsByTime = getEnabledLocationConfigs()
                     .flatMap(loc -> getScrapingTimes(properties, loc).stream().map(time -> new TimedLocationConfig<>(time, loc)))
@@ -27,7 +27,7 @@ public interface LocationBasedScraper<T extends LocationConfig, R> extends Scrap
                             Collectors.mapping(TimedLocationConfig::getLocationConfig, Collectors.toList())));
 
             locationsByTime.forEach((scrapingTime, locs) -> {
-                schedule(resultConsumer, schedulers, properties, scrapingTime, locs);
+                schedule(resultConsumer, schedulers, properties, scrapingTime, locs, false);
             });
         }
     }
@@ -36,10 +36,10 @@ public interface LocationBasedScraper<T extends LocationConfig, R> extends Scrap
         return getLocationConfigs().stream().filter(LocationConfig::isEnabled);
     }
 
-    private void schedule(Consumer<R> resultConsumer, Schedulers schedulers, LocationScrapingProps properties, LocalTime scrapingTime, List<T> locs) {
+    private void schedule(Consumer<R> resultConsumer, Schedulers schedulers, LocationScrapingProps properties, LocalTime scrapingTime, List<T> locs, boolean scrapeOnceImmediately) {
         Scheduler scheduler = schedulers.getScheduler(getSource());
         Function<T, Callable<Optional<R>>> scrapingTask = loc -> () -> scrape(loc);
-        ScrapingByLocation<T, R> scraping = new ScrapingByLocation<>(scrapingTask, resultConsumer, scrapingTime, locs, getSource(), properties);
+        ScrapingByLocation<T, R> scraping = new ScrapingByLocation<>(scrapingTask, resultConsumer, scrapingTime, locs, getSource(), properties, scrapeOnceImmediately);
         scheduler.schedule(scraping);
     }
 

@@ -13,18 +13,18 @@ public interface NonLocationBasedScraper<R> extends Scraper<ScrapingProps> {
         ScrapingProps properties = getScrapingProps();
         if (properties.isEnabled()) {
             if (properties.isScrapeOnceImmediately()) {
-                schedule(resultConsumer, schedulers, properties, null);
+                schedule(resultConsumer, schedulers, properties, null, true);
             }
             for (LocalTime scrapingTime : properties.getScrapingTimes()) {
-                schedule(resultConsumer, schedulers, properties, scrapingTime);
+                schedule(resultConsumer, schedulers, properties, scrapingTime, false);
             }
         }
     }
 
-    private void schedule(Consumer<R> resultConsumer, Schedulers schedulers, ScrapingProps properties, LocalTime scrapingTime) {
+    private void schedule(Consumer<R> resultConsumer, Schedulers schedulers, ScrapingProps properties, LocalTime scrapingTime, boolean scrapeOnceImmediately) {
         Scheduler scheduler = schedulers.getScheduler(getSource());
         Callable<Optional<R>> scrapingTask = this::scrape;
-        ScrapingByAnything<R> scraping = new ScrapingByAnything<>(scrapingTask, resultConsumer, scrapingTime, getSource(), properties);
+        ScrapingByAnything<R> scraping = new ScrapingByAnything<>(scrapingTask, resultConsumer, scrapingTime, getSource(), properties, scrapeOnceImmediately);
         scheduler.schedule(scraping);
     }
 

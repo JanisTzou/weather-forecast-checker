@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class HourForecast {
+public class HourlyForecast {
 
     private final LocalDateTime hour;
     // 24 values expected but there can be an exception

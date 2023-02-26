@@ -28,7 +28,7 @@ public class LocationConfigRepository {
 
     @PostConstruct
     private void init() {
-        locationsConfigsLoaders.put(Source.ACCUWATHER_LOCATIONS_API, () -> getLocationConfigs("accuweather_locations_api_config.csv"));
+        locationsConfigsLoaders.put(Source.ACCUWATHER_API, () -> getLocationConfigs("accuweather_locations_api_config.csv"));
         locationsConfigsLoaders.put(Source.ALADIN_API, () -> getLocationConfigs("aladin_api_config.csv"));
         locationsConfigsLoaders.put(Source.CLEAR_OUTSIDE_WEB, () -> getLocationConfigs("clearoutside_web_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
@@ -56,8 +56,8 @@ public class LocationConfigRepository {
         return CsvFile.fromResourceFile(getPath(locationsFile)).getLines().stream()
                 .map(l -> new Location(
                         l.getString(LOCATION_NAME),
-                        l.getString(LATITUDE),
-                        l.getString(LONGITUDE))
+                        l.getDouble(LATITUDE),
+                        l.getDouble(LONGITUDE))
                 ).collect(Collectors.toList());
     }
 

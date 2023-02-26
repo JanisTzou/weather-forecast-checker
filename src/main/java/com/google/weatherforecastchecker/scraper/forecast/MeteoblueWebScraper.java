@@ -50,13 +50,13 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public Optional<Forecast> scrape(LocationConfig locationConfig) {
-        List<HourForecast> hourForecasts = IntStream.rangeClosed(1, props.getDays())
-                .mapToObj(day -> scrape(locationConfig, day))
+    public Optional<Forecast> scrape(LocationConfig location) {
+        List<HourlyForecast> hourlyForecasts = IntStream.rangeClosed(1, props.getDays())
+                .mapToObj(day -> scrape(location, day))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        if (!hourForecasts.isEmpty()) {
-            return Optional.of(new Forecast(getSource(), locationConfig.getName(), hourForecasts));
+        if (!hourlyForecasts.isEmpty()) {
+            return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location.getLocation(), hourlyForecasts));
         }
         return Optional.empty();
     }
@@ -76,7 +76,7 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
         return props;
     }
 
-    public List<HourForecast> scrape(LocationConfig location, int day) {
+    public List<HourlyForecast> scrape(LocationConfig location, int day) {
         try {
             Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude(), "day", day);
             String url = Utils.fillTemplate(props.getUrl(), values);
@@ -119,8 +119,10 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
 
             LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
 
+            // TODO we also want to get the descriptions here !
+
             return IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
-                    .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                    .mapToObj(hourNo -> new HourlyForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
                     .collect(Collectors.toList());
 
         } catch (Exception e) {

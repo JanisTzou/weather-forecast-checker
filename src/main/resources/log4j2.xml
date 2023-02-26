@@ -2,9 +2,10 @@
 <Configuration>
 
     <Properties>
-        <Property name="level">info</Property>
-        <Property name="app-name">Scrapers</Property>
-        <Property name="layoutPattern">$${sys:app-name} %d{yyyy-MM-dd HH:mm:ss.SSS} %level %thread %c{1.}: %msg%n</Property>
+        <Property name="level">error</Property>
+        <Property name="base-path">./logs</Property>
+        <Property name="app-name">weather-forecast-checker</Property>
+        <Property name="layoutPattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %level %thread %c{1.}: %msg%n</Property>
     </Properties>
 
     <Appenders>
@@ -13,14 +14,25 @@
             <PatternLayout pattern="${layoutPattern}"/>
         </Console>
 
+        <RollingFile name="RollingFile"
+                     fileName="${base-path}/${app-name}.log"
+                     filePattern="${base-path}/${app-name}_%d{yyyy-MM-dd_HH-mm-ss.SSS}.log">
+            <PatternLayout pattern="${layoutPattern}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="40 MB"/>
+            </Policies>
+        </RollingFile>
+
+
     </Appenders>
 
     <Loggers>
 
         <Logger name="org.apache" level="error"/>
 
-        <Root level="${sys:level}">
+        <Root level="info">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="RollingFile"/>
         </Root>
     </Loggers>
 

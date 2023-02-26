@@ -24,5 +24,6 @@ public class ScrapingByLocation<T extends LocationConfig, R> {
     private final List<T> locations;
     private final Source source;
     private final LocationScrapingProps scrapingProps;
+    private final boolean scrapeOnceImmediately;
 
 }

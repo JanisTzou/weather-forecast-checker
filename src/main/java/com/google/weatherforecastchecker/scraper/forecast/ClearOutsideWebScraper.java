@@ -37,15 +37,15 @@ public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public Optional<Forecast> scrape(LocationConfig locationConfig) {
+    public Optional<Forecast> scrape(LocationConfig location) {
         try {
-            Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
+            Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
             String url = Utils.fillTemplate(properties.getUrl(), values);
 
             HtmlPage page = HtmlUnitClientFactory.startDriver().getPage(url);
             DomElement forecastEl = page.getElementById("forecast");
 
-            List<HourForecast> hourForecasts = new ArrayList<>();
+            List<HourlyForecast> hourlyForecasts = new ArrayList<>();
 
             int count = 0;
             for (DomElement day : forecastEl.getChildElements()) {
@@ -66,18 +66,18 @@ public class ClearOutsideWebScraper implements ForecastScraper<LocationConfig> {
                     if (date.isPresent()) {
                         LocalDateTime dateTime = LocalDateTime.of(date.get(), LocalTime.MIDNIGHT);
 
-                        List<HourForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
-                                .mapToObj(hourNo -> new HourForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
+                        List<HourlyForecast> hourForcastsForDay = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+                                .mapToObj(hourNo -> new HourlyForecast(dateTime.plusHours(hourNo), hourCloudCoverages.get(hourNo), null))
                                 .collect(Collectors.toList());
 
-                        hourForecasts.addAll(hourForcastsForDay);
+                        hourlyForecasts.addAll(hourForcastsForDay);
                     } else {
                         log.warn("Failed to parse date!");
                     }
                 }
             }
 
-            return Optional.of(new Forecast(getSource(), locationConfig.getName(), hourForecasts));
+            return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location.getLocation(), hourlyForecasts));
 
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);

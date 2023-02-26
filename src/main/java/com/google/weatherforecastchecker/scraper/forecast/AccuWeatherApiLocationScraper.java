@@ -58,7 +58,7 @@ public class AccuWeatherApiLocationScraper implements LocationBasedScraper<Locat
 
     @Override
     public Source getSource() {
-        return Source.ACCUWATHER_LOCATIONS_API;
+        return Source.ACCUWATHER_API;
     }
 
     @Override

@@ -2,10 +2,7 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
-import com.google.weatherforecastchecker.scraper.LocationConfig;
-import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
-import com.google.weatherforecastchecker.scraper.Source;
+import com.google.weatherforecastchecker.scraper.*;
 import com.google.weatherforecastchecker.util.Utils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,13 +37,13 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public Optional<Forecast> scrape(LocationConfig locationConfig) {
+    public Optional<Forecast> scrape(LocationConfig location) {
         try {
-            Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
+            Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
             String url = Utils.fillTemplate(props.getUrl(), values);
             log.info(url);
             ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class);
-            return mapToForecast(resp.getBody(), locationConfig.getName());
+            return mapToForecast(resp.getBody(), location.getLocation());
         } catch (Exception e) {
             log.error("Failed to scrape page ", e);
         }
@@ -68,28 +65,28 @@ public class MeteoblueApiScraper implements ForecastScraper<LocationConfig> {
         return props;
     }
 
-    private Optional<Forecast> mapToForecast(ForecastDto forecastDto, String locationName) {
+    private Optional<Forecast> mapToForecast(ForecastDto forecastDto, Location location) {
         if (forecastDto != null) {
-            List<HourForecast> hourForecasts = mapToHourForcasts(forecastDto);
-            return Optional.of(new Forecast(getSource(), locationName, hourForecasts));
+            List<HourlyForecast> hourlyForecasts = mapToHourForcasts(forecastDto);
+            return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location, hourlyForecasts));
         }
         return Optional.empty();
     }
 
-    private List<HourForecast> mapToHourForcasts(ForecastDto forecastDto) {
+    private List<HourlyForecast> mapToHourForcasts(ForecastDto forecastDto) {
         Data1Hr data1Hr = forecastDto.getData1Hr();
         int count = Math.min(data1Hr.getTime().size(), data1Hr.getTotalCloudCover().size());
         int maxHoursToInclude = props.getDays() * 24;
         int hours = Math.min(count, maxHoursToInclude);
-        List<HourForecast> hourForecasts = IntStream.range(1, hours)
-                .mapToObj(h -> new HourForecast(
+        List<HourlyForecast> hourlyForecasts = IntStream.range(1, hours)
+                .mapToObj(h -> new HourlyForecast(
                                 data1Hr.getTime().get(h),
                                 data1Hr.getTotalCloudCover().get(h),
                                 null
                         )
                 )
                 .collect(Collectors.toList());
-        return hourForecasts;
+        return hourlyForecasts;
     }
 
     @Data

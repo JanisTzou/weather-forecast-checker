@@ -1,6 +1,6 @@
 Location|Enabled|ScrapingTimes
 Cheb|TRUE|-
-Karlovy Vary|FALSE|-
+Karlovy Vary|TRUE|-
 Přimda|FALSE|-
 Kopisty|FALSE|-
 Tušimice|FALSE|-
@@ -15,10 +15,10 @@ Praha-Karlov|FALSE|-
 Praha-Libuš|FALSE|-
 Temelín|FALSE|-
 České Budějovice|FALSE|-
-Praha-Kbely|FALSE|-
+Praha-Kbely|TRUE|-
 Liberec|FALSE|-
 Jičín|FALSE|-
-Čáslav|FALSE|-
+Čáslav|TRUE|-
 Košetice|FALSE|-
 Kostelní Myslová|FALSE|-
 Pec pod Sněžkou|FALSE|-
@@ -31,9 +31,9 @@ Náměšť nad Oslavou|FALSE|-
 Dukovany|FALSE|-
 Kuchařovice|FALSE|-
 Luká|FALSE|-
-Brno-Tuřany|FALSE|-
+Brno-Tuřany|TRUE|-
 Šerák|FALSE|-
-Prostějov|FALSE|-
+Prostějov|TRUE|-
 Červená u Libavé|FALSE|-
 Holešov|FALSE|-
 Ostrava-Mošnov|FALSE|-

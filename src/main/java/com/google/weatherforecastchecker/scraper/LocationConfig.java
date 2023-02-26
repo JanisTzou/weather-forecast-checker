@@ -26,11 +26,11 @@ public class LocationConfig {
         return location.getName();
     }
 
-    public String getLatitude() {
+    public double getLatitude() {
         return location.getLatitude();
     }
 
-    public String getLongitude() {
+    public double getLongitude() {
         return location.getLongitude();
     }
 

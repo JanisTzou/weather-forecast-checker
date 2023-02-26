@@ -23,7 +23,7 @@ public class Scheduler {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     public <R> void schedule(ScrapingByAnything<R> scraping) {
-        if (scraping.getScrapingProps().isScrapeOnceImmediately()) {
+        if (scraping.isScrapeOnceImmediately()) {
             log.info("Immediately scraping from source {}", scraping.getSource());
             ScrapeNonLocations<R> scrapeLocations = new ScrapeNonLocations<>(scraping);
             executor.schedule(scrapeLocations, 0, TimeUnit.SECONDS);
@@ -36,7 +36,7 @@ public class Scheduler {
     }
 
     public <T extends LocationConfig, R> void schedule(ScrapingByLocation<T, R> scraping) {
-        if (scraping.getScrapingProps().isScrapeOnceImmediately()) {
+        if (scraping.isScrapeOnceImmediately()) {
             log.info("Immediately scraping {} locations from source {}", scraping.getLocations().size(), scraping.getSource());
             ScrapeLocations<T, R> scrapeLocations = new ScrapeLocations<>(scraping);
             executor.schedule(scrapeLocations, 0, TimeUnit.SECONDS);

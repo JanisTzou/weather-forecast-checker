@@ -23,5 +23,6 @@ public class ScrapingByAnything<R> {
     private final LocalTime scrapingTime;
     private final Source source;
     private final ScrapingProps scrapingProps;
+    private final boolean scrapeOnceImmediately;
 
 }

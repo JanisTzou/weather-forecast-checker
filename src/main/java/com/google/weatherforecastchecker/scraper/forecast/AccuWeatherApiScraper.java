@@ -36,17 +36,19 @@ public class AccuWeatherApiScraper implements ForecastScraper<AccuWeatherApiLoca
         this.locationConfigRepository = locationConfigRepository;
     }
 
+    // TODO handle this org.springframework.web.client.HttpServerErrorException$ServiceUnavailable: 503 Unauthorized: "{"Code":"ServiceUnavailable","Message":"The allowed number of requests has been exceeded.","Reference":"/forecasts/v1/hourly/12hour/3395807?apikey=wBZYsN6UW85VptvHSO5L6UyOFyJ2K8gl&language=en&details=true&metric=true"}"
+
     @Override
-    public Optional<Forecast> scrape(AccuWeatherApiLocationConfig locationConfig) {
+    public Optional<Forecast> scrape(AccuWeatherApiLocationConfig location) {
         try {
-            if (locationConfig.getLocationKey() != null) {
-                Map<String, Object> values = Map.of("locationKey", locationConfig.getLocationKey());
+            if (location.getLocationKey() != null) {
+                Map<String, Object> values = Map.of("locationKey", location.getLocationKey());
                 String url = Utils.fillTemplate(properties.getUrl(), values);
                 log.info(url);
                 ResponseEntity<HourForecastDto[]> resp = restTemplate.getForEntity(url, HourForecastDto[].class);
                 if (resp.getBody() != null) {
-                    List<HourForecast> forecasts = Arrays.stream(resp.getBody()).map(dto -> new HourForecast(dto.getDateTime(), dto.getCloudCover(), null)).collect(Collectors.toList());
-                    return Optional.of(new Forecast(getSource(), locationConfig.getName(), forecasts));
+                    List<HourlyForecast> forecasts = Arrays.stream(resp.getBody()).map(dto -> new HourlyForecast(dto.getDateTime(), dto.getCloudCover(), null)).collect(Collectors.toList());
+                    return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location.getLocation(), forecasts));
                 }
                 AccuWeatherApiUtils.logRemainingRateLimit(resp);
             }

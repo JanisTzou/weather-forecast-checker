@@ -2,10 +2,7 @@ package com.google.weatherforecastchecker.scraper.forecast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.weatherforecastchecker.scraper.ForecastScrapingProps;
-import com.google.weatherforecastchecker.scraper.LocationConfig;
-import com.google.weatherforecastchecker.scraper.LocationConfigRepository;
-import com.google.weatherforecastchecker.scraper.Source;
+import com.google.weatherforecastchecker.scraper.*;
 import com.google.weatherforecastchecker.util.Utils;
 import jakarta.annotation.Nullable;
 import lombok.Data;
@@ -51,12 +48,12 @@ public class AladinApiScraper implements ForecastScraper<LocationConfig> {
     }
 
     @Override
-    public Optional<Forecast> scrape(LocationConfig locationConfig) {
-        Map<String, Object> values = Map.of("lat", locationConfig.getLatitude(), "lon", locationConfig.getLongitude());
+    public Optional<Forecast> scrape(LocationConfig location) {
+        Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
         String url = Utils.fillTemplate(properties.getUrl(), values);
 //        log.info(url);
         ResponseEntity<ForecastDto> resp = restTemplate.getForEntity(url, ForecastDto.class); // content is text/content -> parse manually ...
-        return toForecast(locationConfig.getName(), resp.getBody());
+        return toForecast(location.getLocation(), resp.getBody());
     }
 
     @Override
@@ -64,7 +61,7 @@ public class AladinApiScraper implements ForecastScraper<LocationConfig> {
         return locationConfigRepository.getLocationConfigs(getSource());
     }
 
-    public Optional<Forecast> toForecast(String location, @Nullable ForecastDto forecastDto) {
+    public Optional<Forecast> toForecast(Location location, @Nullable ForecastDto forecastDto) {
         if (forecastDto == null) {
             return Optional.empty();
         }
@@ -72,15 +69,15 @@ public class AladinApiScraper implements ForecastScraper<LocationConfig> {
         LocalDateTime dateTime = forecastDto.getForecastTimeIso();
         List<Double> hourCloudCoverages = forecastDto.getParameterValues().getCloudsTotal();
 
-        List<HourForecast> forecasts = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
+        List<HourlyForecast> forecasts = IntStream.rangeClosed(0, hourCloudCoverages.size() - 1)
                 .mapToObj(hourNo -> {
                     LocalDateTime hour = dateTime.plusHours(hourNo);
                     int coverage = (int) (hourCloudCoverages.get(hourNo) * 100);
-                    return new HourForecast(hour, coverage, null);
+                    return new HourlyForecast(hour, coverage, null);
                 })
                 .collect(Collectors.toList());
 
-        return Optional.of(new Forecast(getSource(), location, forecasts));
+        return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location, forecasts));
     }
 
 
