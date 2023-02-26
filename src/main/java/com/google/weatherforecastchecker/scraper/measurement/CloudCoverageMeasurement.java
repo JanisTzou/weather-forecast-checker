@@ -13,7 +13,7 @@ public class CloudCoverageMeasurement {
     private final LocalDateTime dateTime;
     private final Location location;
     private final String description;
-    private final Integer cloudCoverage;
+    private final Integer cloudCoverageTotal;
     private final Source source;
 
 }

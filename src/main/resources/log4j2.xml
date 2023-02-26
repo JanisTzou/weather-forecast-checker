@@ -29,6 +29,7 @@
     <Loggers>
 
         <Logger name="org.apache" level="error"/>
+        <Logger name="com.gargoylesoftware.htmlunit" level="error" additivity="false"/>
 
         <Root level="info">
             <AppenderRef ref="Console"/>

@@ -31,8 +31,8 @@ public class JpaCloudCoverageMeasurement extends JpaEntityBase {
     @JoinColumn(name = "source_id", nullable = false)
     private JpaSource source;
 
-    @Column(name = "cloud_coverage")
-    private Integer cloudCoverage;
+    @Column(name = "cloud_coverage_total")
+    private Integer cloudCoverageTotal;
 
     @Column(name = "description")
     private String description;

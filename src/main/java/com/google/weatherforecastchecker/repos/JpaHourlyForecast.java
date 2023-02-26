@@ -19,8 +19,8 @@ public class JpaHourlyForecast extends JpaEntityBase {
     @Column(name = "hour", nullable = false)
     private LocalDateTime hour;
 
-    @Column(name = "cloud_coverage")
-    private Integer cloudCoverage;
+    @Column(name = "cloud_coverage_total")
+    private Integer cloudCoverageTotal;
 
     @Column(name = "description")
     private String description;

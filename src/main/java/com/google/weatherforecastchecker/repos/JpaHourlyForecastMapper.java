@@ -20,7 +20,7 @@ public class JpaHourlyForecastMapper {
     public JpaHourlyForecast mapToEntity(HourlyForecast hourlyForecast, JpaForecast jpaForecast) {
         return new JpaHourlyForecast(
                 hourlyForecast.getHour(),
-                hourlyForecast.getCloudCoverPercentage(),
+                hourlyForecast.getCloudCoverTotal(),
                 hourlyForecast.getDescription(),
                 jpaForecast
         );

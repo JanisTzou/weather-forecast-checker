@@ -84,11 +84,11 @@ CREATE INDEX IF NOT EXISTS fk_idx_forecast_tbl_location_tbl ON forecast_tbl (loc
 
 CREATE TABLE IF NOT EXISTS hourly_forecast_tbl
 (
-    id             SERIAL PRIMARY KEY,
-    forecast_id    int          NOT NULL,
-    hour           TIMESTAMP    NOT NULL,
-    cloud_coverage int          NULL,
-    description    varchar(100) NULL,
+    id                   SERIAL PRIMARY KEY,
+    forecast_id          int          NOT NULL,
+    hour                 TIMESTAMP    NOT NULL,
+    cloud_coverage_total int          NULL,
+    description          varchar(100) NULL,
     CONSTRAINT fk_hourly_forecast_tbl_forecast_tbl FOREIGN KEY (forecast_id) REFERENCES forecast_tbl (id)
 );
 CREATE INDEX IF NOT EXISTS fk_idx_hourly_forecast_tbl_forecast_tbl ON hourly_forecast_tbl (forecast_id);
@@ -96,13 +96,13 @@ CREATE INDEX IF NOT EXISTS fk_idx_hourly_forecast_tbl_forecast_tbl ON hourly_for
 
 CREATE TABLE IF NOT EXISTS cloud_coverage_measurement_tbl
 (
-    id             SERIAL PRIMARY KEY,
-    scraped        TIMESTAMP    NOT NULL,
-    date_time      TIMESTAMP    NOT NULL,
-    source_id      int          NOT NULL,
-    location_id    int          NOT NULL,
-    cloud_coverage int          NULL,
-    description    varchar(100) NULL,
+    id                   SERIAL PRIMARY KEY,
+    scraped              TIMESTAMP    NOT NULL,
+    date_time            TIMESTAMP    NOT NULL,
+    source_id            int          NOT NULL,
+    location_id          int          NOT NULL,
+    cloud_coverage_total int          NULL,
+    description          varchar(100) NULL,
     CONSTRAINT fk_cloud_coverage_measurement_tbl_source_tbl FOREIGN KEY (source_id) REFERENCES source_tbl (id),
     CONSTRAINT fk_cloud_coverage_measurement_tbl_location_tbl FOREIGN KEY (location_id) REFERENCES location_tbl (id)
 );

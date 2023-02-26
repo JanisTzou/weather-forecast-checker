@@ -8,9 +8,7 @@ import java.time.LocalDateTime;
 public class HourlyForecast {
 
     private final LocalDateTime hour;
-    // 24 values expected but there can be an exception
-    private final int cloudCoverPercentage;
-    // 24 values expected
+    private final Integer cloudCoverTotal;
     private final String description;
 
 }

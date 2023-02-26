@@ -21,7 +21,7 @@ import static com.google.weatherforecastchecker.scraper.LocationConfigRepository
 @Log4j2
 public class LocationConfigRepository {
 
-    private static final String sourceConfigFilesFolder = "data_sources";
+    private static final String sourceConfigFilesFolder = "scraping_configs";
     private static final String locationsFile = "locations.csv";
     private static final String meteobluePictogramsMappingFile = "meteoblue_pictograms_mapping.csv";
     private final Map<Source, Supplier<List<LocationConfig>>> locationsConfigsLoaders = new ConcurrentHashMap<>();
