@@ -122,7 +122,8 @@ public class MeteoblueWebScraper implements ForecastScraper<LocationConfig> {
                             .mapToObj(hourNo -> {
                                 Integer iconNo = iconNumbers.get(hourNo);
                                 Integer cloudCoverageTotal = getCloudCoverageTotal(pictogramsConfigs, iconNo);
-                                return new HourlyForecast(dateTime.plusHours(hourNo), cloudCoverageTotal, "icon_" + iconNo);
+                                LocalDateTime hour = dateTime.plusHours(hourNo + 1); // need +1 to start at 01:00 as that matches the times returned by the Meteoblue API
+                                return new HourlyForecast(hour, cloudCoverageTotal, "icon_" + iconNo);
                             })
                             .collect(Collectors.toList());
                 } else {
