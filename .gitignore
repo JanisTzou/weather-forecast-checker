@@ -38,4 +38,4 @@ out/
 env.properties
 
 logs
-#.DS_Store
+.DS_Store
