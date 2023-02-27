@@ -28,6 +28,7 @@ public class ForecastRepositoryImpl implements ForecastRepository {
         if (jpaSource.isPresent()) {
             JpaLocation jpaLocation = jpaLocationRepository.saveIfNewAndGet(jpaForecast.getLocation());
             jpaForecast.setLocation(jpaLocation);
+            // TODO fire event if the location was new ...
             jpaForecast.setSource(jpaSource.get());
             for (HourlyForecast hourlyForecast : forecast.getHourlyForecasts()) {
                 JpaHourlyForecast jpaHourlyForecast = jpaHourlyForecastMapper.mapToEntity(hourlyForecast, jpaForecast);

@@ -1,0 +1,2 @@
+ALTER TABLE location_tbl
+    ADD COLUMN complete BOOLEAN NOT NULL DEFAULT FALSE;

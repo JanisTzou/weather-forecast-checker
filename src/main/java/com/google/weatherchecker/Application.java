@@ -28,7 +28,7 @@ public class Application {
 	@EventListener(ApplicationReadyEvent.class)
 	public void startScraping() {
 		ScrapingManager scrapingManager = context.getBean(ScrapingManager.class);
-		scrapingManager.startScrapingForecasts();
+		scrapingManager.startScraping();
 	}
 
 }

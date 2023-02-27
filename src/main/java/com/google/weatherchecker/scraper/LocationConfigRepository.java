@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ public class LocationConfigRepository {
         locationsConfigsLoaders.put(Source.CLEAR_OUTSIDE_WEB, () -> getLocationConfigs("clearoutside_web_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_WEB, () -> getLocationConfigs("meteoblue_web_config.csv"));
+        locationsConfigsLoaders.put(Source.LOCATION_IQ_API, () -> getLocationConfigs("locationiq_reverse_geocoding_api_config.csv"));
     }
 
     public List<AccuWeatherLocationApiConfig> getAccuWeatherLocationConfigs() {
@@ -52,6 +54,24 @@ public class LocationConfigRepository {
         } else {
             throw new IllegalArgumentException("No location configs for source = " + source);
         }
+    }
+
+    public Optional<LocationConfig> getLocationConfig(Source source, String locationName) {
+        Supplier<List<LocationConfig>> supplier = locationsConfigsLoaders.get(source);
+        if (supplier != null) {
+            return supplier.get().stream().filter(l -> l.getName().equals(locationName)).findFirst();
+        } else {
+            throw new IllegalArgumentException("No location config for source = '" + source + "' and location name = '" + locationName + "'");
+        }
+    }
+
+    public Map<Integer, MeteobluePictorgramsConfig> getMeteobluePictogramsConfigs() {
+        return CsvFile.fromResourceFile(getPath(meteobluePictogramsMappingFile)).getLines().stream()
+                .map(l -> new MeteobluePictorgramsConfig(
+                        l.getInt(PICTOGRAM_NO),
+                        l.getString(PICTOGRAM_DESC),
+                        l.getInt(PICTOGRAM_CLOUD_COVERAGE)
+                )).collect(Collectors.toMap(MeteobluePictorgramsConfig::getPictogramId, m -> m));
     }
 
     List<Location> getLocations() {
@@ -89,15 +109,6 @@ public class LocationConfigRepository {
                         configsByName.get(l.getString(LOCATION_NAME)),
                         l.getString(CHMU_STATION))
                 ).collect(Collectors.toList());
-    }
-
-    public Map<Integer, MeteobluePictorgramsConfig> getMeteobluePictogramsConfigs() {
-        return CsvFile.fromResourceFile(getPath(meteobluePictogramsMappingFile)).getLines().stream()
-                .map(l -> new MeteobluePictorgramsConfig(
-                        l.getInt(PICTOGRAM_NO),
-                        l.getString(PICTOGRAM_DESC),
-                        l.getInt(PICTOGRAM_CLOUD_COVERAGE)
-                )).collect(Collectors.toMap(MeteobluePictorgramsConfig::getPictogramId, m -> m));
     }
 
     private String getPath(String file) {

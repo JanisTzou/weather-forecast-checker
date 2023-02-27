@@ -39,12 +39,12 @@ public class ScrapingManager {
         this.measurementsProcessor = measurementsProcessor;
     }
 
-    public void startScrapingForecasts() {
+    public void startScraping() {
         log.info(">>> Starting scraping ...");
         for (ForecastScraper<? extends LocationConfig> scraper : forecastScrapers) {
-            scraper.startScraping(forecastProcessor::processForecast, schedulers);
+            scraper.scheduleScrapingAllLocations(forecastProcessor::processForecast, schedulers);
         }
-        accuWeatherLocationApiScraper.startScraping(accuWeatherLocationProcessor::processLocationKey, schedulers);
+        accuWeatherLocationApiScraper.scheduleScrapingAllLocations(accuWeatherLocationProcessor::processLocationKey, schedulers);
         chmuMeasurementsScraper.startScraping(measurementsProcessor::processMeasurements, schedulers);
     }
 

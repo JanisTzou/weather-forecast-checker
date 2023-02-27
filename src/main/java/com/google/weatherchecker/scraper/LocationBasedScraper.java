@@ -12,26 +12,48 @@ import java.util.stream.Stream;
 
 public interface LocationBasedScraper<T extends LocationConfig, R> extends Scraper<LocationScrapingProps> {
 
-    default void startScraping(Consumer<R> resultConsumer, Schedulers schedulers) {
+    // TODO consider moving the implementations to sub-class
+    default void scheduleScraping(Consumer<R> resultConsumer, Schedulers schedulers, T locationConfig) {
         LocationScrapingProps properties = getScrapingProps();
         if (properties.isEnabled()) {
+            List<T> asList = List.of(locationConfig);
             if (properties.isScrapeOnceImmediately()) {
-                List<T> locs = getEnabledLocationConfigs().collect(Collectors.toList());
-                schedule(resultConsumer, schedulers, properties, null, locs, true);
+                schedule(resultConsumer, schedulers, properties, null, asList, true);
             }
-            Map<LocalTime, List<T>> locationsByTime = getEnabledLocationConfigs()
-                    .flatMap(loc -> getScrapingTimes(properties, loc).stream().map(time -> new TimedLocationConfig<>(time, loc)))
-                    .collect(Collectors.groupingBy(TimedLocationConfig::getScrapingTime,
-                            Collectors.mapping(TimedLocationConfig::getLocationConfig, Collectors.toList())));
 
-            locationsByTime.forEach((scrapingTime, locs) -> {
-                schedule(resultConsumer, schedulers, properties, scrapingTime, locs, false);
-            });
+            if (properties.isScheduleScraping()) {
+                scheduleScraping(resultConsumer, schedulers, properties, asList);
+            }
         }
     }
 
-    private Stream<T> getEnabledLocationConfigs() {
-        return getLocationConfigs().stream().filter(LocationConfig::isEnabled);
+    default void scheduleScrapingAllLocations(Consumer<R> resultConsumer, Schedulers schedulers) {
+        LocationScrapingProps properties = getScrapingProps();
+        if (properties.isEnabled()) {
+            if (properties.isScrapeOnceImmediately()) {
+                List<T> locs = getEnabledLocationConfigs(getLocationConfigs()).collect(Collectors.toList());
+                schedule(resultConsumer, schedulers, properties, null, locs, true);
+            }
+
+            if (properties.isScheduleScraping()) {
+                scheduleScraping((Consumer<R>) resultConsumer, schedulers, properties, getLocationConfigs());
+            }
+        }
+    }
+
+    private void scheduleScraping(Consumer<R> resultConsumer, Schedulers schedulers, LocationScrapingProps properties, List<T> locationConfigs) {
+        Map<LocalTime, List<T>> locationsByTime = getEnabledLocationConfigs(locationConfigs)
+                .flatMap(loc -> getScrapingTimes(properties, loc).stream().map(time -> new TimedLocationConfig<>(time, loc)))
+                .collect(Collectors.groupingBy(TimedLocationConfig::getScrapingTime,
+                        Collectors.mapping(TimedLocationConfig::getLocationConfig, Collectors.toList())));
+
+        locationsByTime.forEach((scrapingTime, locs) -> {
+            schedule(resultConsumer, schedulers, properties, scrapingTime, locs, false);
+        });
+    }
+
+    private Stream<T> getEnabledLocationConfigs(List<T> locationConfigs) {
+        return locationConfigs.stream().filter(LocationConfig::isEnabled);
     }
 
     private void schedule(Consumer<R> resultConsumer, Schedulers schedulers, LocationScrapingProps properties, LocalTime scrapingTime, List<T> locs, boolean scrapeOnceImmediately) {

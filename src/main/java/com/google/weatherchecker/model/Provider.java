@@ -6,6 +6,7 @@ public enum Provider {
     ALADIN,
     CLEAR_OUTSIDE,
     METEOBLUE,
-    CHMU
+    CHMU,
+    LOCATION_IQ
 
 }

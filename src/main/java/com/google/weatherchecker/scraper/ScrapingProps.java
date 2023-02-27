@@ -14,6 +14,7 @@ public abstract class ScrapingProps implements TimedScraping {
     protected String url;
     protected boolean enabled;
     protected boolean scrapeOnceImmediately;
+    protected boolean scheduleScraping;
     protected Duration delayBetweenRequests;
 
 }

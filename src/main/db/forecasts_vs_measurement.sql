@@ -85,7 +85,7 @@ from(select hour,st.name,cloud_coverage_total,location_id,date_trunc('hour', scr
      from hourly_forecast_tbl hft
               inner join forecast_tbl ft on hft.forecast_id = ft.id
               inner join source_tbl st on st.id = ft.source_id
-     where ft.source_id = 3
+     where ft.source_id = 2
        and hft.hour > ft.scraped
     and ft.scraped > '2023-02-26 12:00:00.000000'
     ) as frcst

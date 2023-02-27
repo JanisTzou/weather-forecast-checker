@@ -15,10 +15,12 @@ public class CloudCoverageMeasurementsProcessor {
 
     private final MeasurementRepository measurementRepository;
     private final SerialDatabaseWriter serialDatabaseWriter;
+    private final LocationEnricher locationEnricher;
 
     public void processMeasurements(CloudCoverageMeasurements measurements) {
         log.info("Received measurements: {}", measurements);
         for (CloudCoverageMeasurement measurement : measurements.getMeasurements()) {
+            locationEnricher.enrich(measurement.getLocation());
             serialDatabaseWriter.execute(() -> measurementRepository.save(measurement));
         }
     }

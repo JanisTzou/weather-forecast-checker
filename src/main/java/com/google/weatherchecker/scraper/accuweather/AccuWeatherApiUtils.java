@@ -15,13 +15,13 @@ public class AccuWeatherApiUtils {
         if (headers != null) {
             Optional<String> remainingRateLimit = headers.stream().findFirst();
             remainingRateLimit.ifPresent(s -> log.info("Remaining rate limit = {}", s));
-        } else {
-            String allHeaders = resp.getHeaders().entrySet().stream()
-                    .map(e -> e.getKey() + ": " + e.getValue().stream()
-                            .collect(Collectors.joining(","))
-                    ).collect(Collectors.joining("; "));
-            log.info("Received headers: {}", allHeaders);
         }
+        // temporary ...
+        String allHeaders = resp.getHeaders().entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue().stream()
+                        .collect(Collectors.joining(","))
+                ).collect(Collectors.joining("; "));
+        log.info("Received headers: {}", allHeaders);
     }
 
 }

@@ -7,7 +7,8 @@ public enum Source {
     CLEAR_OUTSIDE_WEB(Provider.CLEAR_OUTSIDE),
     METEOBLUE_WEB(Provider.METEOBLUE),
     METEOBLUE_API(Provider.METEOBLUE),
-    CHMU_WEB(Provider.CHMU);
+    CHMU_WEB(Provider.CHMU),
+    LOCATION_IQ_API(Provider.LOCATION_IQ);
 
     private final Provider provider;
 
