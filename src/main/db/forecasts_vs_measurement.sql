@@ -1,57 +1,3 @@
-select measure.id,
-       measure.name,
-       measure.date_time as hour,
-       meteo_web.scraped_dt,
-       measure.cloud_coverage_total   as measured,
-       meteo_web.cloud_coverage_total - measure.cloud_coverage_total as meteo_web_diff,
-       aladin_api.cloud_coverage_total - measure.cloud_coverage_total as aladin_diff,
-       clearoutside.cloud_coverage_total - measure.cloud_coverage_total as clearoutside_diff
---        accu.cloud_coverage_total - measure.cloud_coverage_total as accuweather_diff
-from (select ccm.id, location_id, name, date_time, cloud_coverage_total, date_trunc('hour', scraped) as scraped_dt
-      from cloud_coverage_measurement_tbl as ccm
-               inner join location_tbl as l on ccm.location_id = l.id
-      where source_id = 6
-        and ccm.cloud_coverage_total is not null) as measure
-         left join (select hour, st.name, cloud_coverage_total, location_id, date_trunc('hour', scraped) as scraped_dt
-                    from hourly_forecast_tbl hft
-                             inner join forecast_tbl ft on hft.forecast_id = ft.id
-                             inner join source_tbl st on st.id = ft.source_id
-                    where ft.source_id = 4) as meteo_web
-                   on measure.location_id = meteo_web.location_id
-                       and measure.date_time = meteo_web.hour
-                       and measure.date_time = (meteo_web.scraped_dt + interval '6 hours' )
-         left join (select hour, st.name, cloud_coverage_total, location_id, date_trunc('hour', scraped) as scraped_dt
-                    from hourly_forecast_tbl hft
-                             inner join forecast_tbl ft on hft.forecast_id = ft.id
-                             inner join source_tbl st on st.id = ft.source_id
-                    where ft.source_id = 2) as aladin_api
-                   on measure.location_id = aladin_api.location_id
-                       and measure.date_time = aladin_api.hour
-                       and measure.date_time = (aladin_api.scraped_dt + interval '6 hours' )
-         left join (select hour, st.name, cloud_coverage_total, location_id, date_trunc('hour', scraped) as scraped_dt
-                    from hourly_forecast_tbl hft
-                             inner join forecast_tbl ft on hft.forecast_id = ft.id
-                             inner join source_tbl st on st.id = ft.source_id
-                    where ft.source_id = 3) as clearoutside
-                   on measure.location_id = clearoutside.location_id
-                       and measure.date_time = clearoutside.hour
-                       and measure.date_time = (clearoutside.scraped_dt + interval '6 hours' )
---          left join (select hour, st.name, cloud_coverage_total, location_id, date_trunc('hour', scraped) as scraped_dt
---                     from hourly_forecast_tbl hft
---                              inner join forecast_tbl ft on hft.forecast_id = ft.id
---                              inner join source_tbl st on st.id = ft.source_id
---                     where ft.source_id = 1) as accu
---                    on measure.location_id = accu.location_id
---                        and measure.date_time = accu.hour
---                        and measure.date_time = (accu.scraped_dt + interval '5 hours' )
-where meteo_web.cloud_coverage_total is not null
-  and aladin_api.cloud_coverage_total is not null
-  and clearoutside.cloud_coverage_total is not null
---   and accu.cloud_coverage_total is not null
-;
-
-
-
 select hour, st.name, cloud_coverage_total, location_id, date_trunc('hour', scraped) as forecast_scraped
 from hourly_forecast_tbl
          inner join forecast_tbl ft on hourly_forecast_tbl.forecast_id = ft.id
@@ -59,45 +5,70 @@ from hourly_forecast_tbl
 where ft.source_id = 4
 ;
 
-
 select hour, source_id, date_trunc('hour', scraped) as scraped
 from hourly_forecast_tbl
          inner join forecast_tbl ft on hourly_forecast_tbl.forecast_id = ft.id
 where  source_id = 1
 ;
 
-select *
-from source_tbl;
-
-
-select source, avg(diff_abs) avg_diff_abs, count(hour) record_count
-from (select frcst.name                                                                 as source,
-             msrmt.name                                                                 as location,
-             frcst.scraped_dt                                                           as forecast_scraped_dt,
-             frcst.scraped_hour_dt                                                      as forecast_scraped_hour_dt,
+select source,
+       round(avg(diff_abs)) avg_diff_abs,
+       round(avg(diff))     avg_diff,
+       count(hour)          record_count,
+       case
+           when avg(diff_abs) > 20 then 'very bad'
+           when avg(diff_abs) > 13 then 'bad'
+           when avg(diff_abs) > 7 then 'good'
+           else 'excellent'
+           end as           forecast_description,
+       case
+           when avg(diff) > 20 then 'very optimistic'
+           when avg(diff) > 5 then 'optimistic'
+           when avg(diff) >= -5 then 'mixed'
+           when avg(diff) >= -20 then 'pessimistic'
+           else 'very pessimistic'
+           end as           forecast_error_description
+from (select frcst.source_name                                                                   as source,
+             msrmt.name                                                                          as location,
+             frcst.forecast_scraped_dt                                                           as forecast_scraped_dt,
+             frcst.forecast_scraped_hour_dt                                                      as forecast_scraped_hour_dt,
              hour,
-             msrmt.cloud_coverage_total                                                 as measured,
-             frcst.cloud_coverage_total                                                 as forecast,
-             abs(msrmt.cloud_coverage_total - frcst.cloud_coverage_total)               as diff_abs,
-             msrmt.cloud_coverage_total - frcst.cloud_coverage_total                    as diff,
-             extract(epoch from (msrmt.scraped_hour_dt - frcst.scraped_hour_dt)) / 3600 as hours_after_forecast
-from(select hour,st.name,cloud_coverage_total,location_id,date_trunc('hour', scraped) as scraped_hour_dt,scraped scraped_dt
-     from hourly_forecast_tbl hft
-              inner join forecast_tbl ft on hft.forecast_id = ft.id
-              inner join source_tbl st on st.id = ft.source_id
-     where
---            ft.source_id = 3 and
-           hft.hour > ft.scraped
-    and ft.scraped > '2023-02-26 12:00:00.000000'
-    ) as frcst
-inner join (select ccm.id, location_id, name, date_time, cloud_coverage_total, date_trunc('hour', scraped) as scraped_hour_dt
-            from cloud_coverage_measurement_tbl as ccm
-                     inner join location_tbl as l on ccm.location_id = l.id
-            where source_id = 6
-              and ccm.cloud_coverage_total is not null
-    ) as msrmt on frcst.location_id = msrmt.location_id and frcst.hour = msrmt.date_time
-    and (extract(epoch from (msrmt.scraped_hour_dt - frcst.scraped_hour_dt)) / 3600) <= 12 -- restrict hours after forecast
---     here we can also have conditions like 6 hours after the forecast was scraped etc ...
-) comparison
+             msrmt.cloud_coverage_total                                                          as measured,
+             frcst.cloud_coverage_total                                                          as forecast,
+             abs(msrmt.cloud_coverage_total - frcst.cloud_coverage_total)                        as diff_abs,
+             msrmt.cloud_coverage_total - frcst.cloud_coverage_total                             as diff,
+             extract(epoch from (msrmt.scraped_hour_dt - frcst.forecast_scraped_hour_dt)) / 3600 as hours_after_forecast
+      from (select ft.source_id,
+                   st.name                             as source_name,
+                   ft.location_id,
+                   hft.hour,
+                   max(hft.id)                         as hour_id,
+                   max(ft.id)                          as forecast_id,
+                   date_trunc('hour', max(ft.scraped)) as forecast_scraped_hour_dt,
+                   max(ft.scraped)                     as forecast_scraped_dt,
+                   max(hft.cloud_coverage_total)       as cloud_coverage_total
+            from hourly_forecast_tbl hft
+                     inner join forecast_tbl ft on hft.forecast_id = ft.id
+                     inner join source_tbl st on st.id = ft.source_id
+            where hft.hour >= ft.scraped -- ensures that we do not include "forecast of the past"
+              and hft.hour <= now()
+              and hft.hour >= now() - interval '24 hours'
+                -- for another usecase we want whole past days intervals
+            group by ft.source_id, st.name, ft.location_id, hft.hour
+           ) as frcst
+               inner join (select ccm.id,
+                                  location_id,
+                                  name,
+                                  date_time,
+                                  cloud_coverage_total,
+                                  date_trunc('hour', scraped) as scraped_hour_dt
+                           from cloud_coverage_measurement_tbl as ccm
+                                    inner join location_tbl as l on ccm.location_id = l.id
+--                                                                         and l.region in ('Střední Čechy', 'Praha')
+                           where source_id = 6
+                             and ccm.cloud_coverage_total is not null) as msrmt on frcst.location_id = msrmt.location_id
+          and frcst.hour = msrmt.date_time
+     ) comparison
 group by comparison.source
+order by avg_diff_abs
 ;
