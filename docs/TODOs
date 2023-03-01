@@ -2,3 +2,7 @@
 - review the way we schedule scraping currently with the scrape methods on Location Scraper interface ...
 - update AccuWeather locationKeys based on new coordinates
 - fix provider
+- filter out or somehow mark forcecast for hours that are already in the past (might have been corrected to correspond with reality)
+- check this: https://stackoverflow.com/questions/72932610/spring-data-jdbc-could-not-safely-identify-store-assignment-for-repository-can
+- create daily analysis repo? And current analysis?
+- define points when analysis should be updated in the DB ...

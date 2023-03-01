@@ -51,8 +51,11 @@ from (select frcst.source_name                                                  
                      inner join forecast_tbl ft on hft.forecast_id = ft.id
                      inner join source_tbl st on st.id = ft.source_id
             where hft.hour >= ft.scraped -- ensures that we do not include "forecast of the past"
-              and hft.hour <= now()
-              and hft.hour >= now() - interval '24 hours'
+              and (case
+                       when (true) then hft.hour >= now() - interval '36 hours' and hft.hour <= now()
+                       when (false) then hft.hour >= '2023-02-28 00:00:00' and hft.hour <= '2023-02-28 23:59:59'
+                       else true
+                end)
                 -- for another usecase we want whole past days intervals
             group by ft.source_id, st.name, ft.location_id, hft.hour
            ) as frcst
@@ -64,7 +67,11 @@ from (select frcst.source_name                                                  
                                   date_trunc('hour', scraped) as scraped_hour_dt
                            from cloud_coverage_measurement_tbl as ccm
                                     inner join location_tbl as l on ccm.location_id = l.id
---                                                                         and l.region in ('Střední Čechy', 'Praha')
+                               and (case
+                                        when (false) then l.region in ('Střední Čechy', 'Praha')
+                                         when (false) then l.county in ('Středočeský kraj', 'Hlavní město Praha')
+                                        else true
+                                   end)
                            where source_id = 6
                              and ccm.cloud_coverage_total is not null) as msrmt on frcst.location_id = msrmt.location_id
           and frcst.hour = msrmt.date_time
