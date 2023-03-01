@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Component
 @Profile({"accuweather-locations", "default"})
-public class AccuWeatherForecastApiScraper implements ForecastScraper<AccuWeatherLocationApiConfig> {
+public class AccuWeatherForecastApiScraper implements ForecastScraper<AccuWeatherLocationConfig> {
 
     private final RestTemplate restTemplate;
     private final AccuWeatherForecastApiScraperProps properties;
@@ -43,7 +43,7 @@ public class AccuWeatherForecastApiScraper implements ForecastScraper<AccuWeathe
     // TODO handle this org.springframework.web.client.HttpServerErrorException$ServiceUnavailable: 503 Unauthorized: "{"Code":"ServiceUnavailable","Message":"The allowed number of requests has been exceeded.","Reference":"/forecasts/v1/hourly/12hour/3395807?apikey=wBZYsN6UW85VptvHSO5L6UyOFyJ2K8gl&language=en&details=true&metric=true"}"
 
     @Override
-    public Optional<Forecast> scrape(AccuWeatherLocationApiConfig location) {
+    public Optional<Forecast> scrape(AccuWeatherLocationConfig location) {
         try {
             if (location.getLocationKey() != null) {
                 Map<String, Object> values = Map.of("locationKey", location.getLocationKey());
@@ -62,7 +62,7 @@ public class AccuWeatherForecastApiScraper implements ForecastScraper<AccuWeathe
     }
 
     @Override
-    public List<AccuWeatherLocationApiConfig> getLocationConfigs() {
+    public List<AccuWeatherLocationConfig> getLocationConfigs() {
         return locationConfigRepository.getAccuWeatherLocationConfigs();
     }
 

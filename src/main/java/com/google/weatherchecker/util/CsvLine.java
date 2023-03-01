@@ -3,6 +3,8 @@ package com.google.weatherchecker.util;
 import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 
 public class CsvLine {
@@ -20,35 +22,31 @@ public class CsvLine {
         this.values = values;
     }
 
-    public String getString(String headerName) {
-        int pos = pos(headerName);
-        if (pos == -1) {
-            throw new IllegalArgumentException("No header found for name = " + headerName);
-        }
-        return values.get(pos);
+    public Optional<String> getString(String headerName) {
+        return checkNoValueAndGet(headerName, v -> v);
     }
 
-    public boolean getBoolean(String headerName) {
-        return Boolean.parseBoolean(values.get(pos(headerName)));
+    public Optional<Boolean> getBoolean(String headerName) {
+        return checkNoValueAndGet(headerName, Boolean::parseBoolean);
     }
 
-    public int getInt(String headerName) {
-        return Integer.parseInt(values.get(pos(headerName)));
+    public Optional<Integer> getInt(String headerName) {
+        return checkNoValueAndGet(headerName, Integer::parseInt);
     }
 
-    public double getDouble(String headerName) {
-        return Double.parseDouble(values.get(pos(headerName)));
+    public Optional<Double> getDouble(String headerName) {
+        return checkNoValueAndGet(headerName, Double::parseDouble);
     }
 
     public List<LocalTime> getTimes(String headerName) {
-        return parseTimes(getString(headerName));
+        return parseTimes(getString(headerName).orElse(null));
     }
 
     /**
      * @param timesStr comma separated list of times in 'H:mm' format
      */
     private static List<LocalTime> parseTimes(String timesStr) {
-        if (no_value.equals(timesStr)) {
+        if (timesStr == null || no_value.equals(timesStr)) {
             return Collections.emptyList();
         } else {
             return Utils.parseCommaSeparatedTimes(timesStr);
@@ -56,6 +54,24 @@ public class CsvLine {
     }
 
     private int pos(String headerName) {
-        return headers.indexOf(headerName);
+        int pos = headers.indexOf(headerName);
+        if (pos == -1) {
+            throw new IllegalArgumentException("No header found for name = " + headerName);
+        }
+        return pos;
     }
+
+    private String getValueFor(String headerName) {
+        return values.get(pos(headerName));
+    }
+
+    private <T> Optional<T> checkNoValueAndGet(String headerName, Function<String, T> parser) {
+        String value = getValueFor(headerName);
+        if (no_value.equals(value)) {
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable(parser.apply(value));
+        }
+    }
+
 }

@@ -22,7 +22,7 @@ import java.util.Optional;
 @Log4j2
 @Component
 @Profile({"locationiq", "default"})
-public class LocationIqApiScraper implements LocationBasedScraper<LocationConfig, Location> {
+public class LocationIqApiScraper implements LocationBasedScraper<LocationIqLocationConfig, Location> {
 
     private final RestTemplate restTemplate;
     private final LocationIqApiScraperProps properties;
@@ -47,8 +47,7 @@ public class LocationIqApiScraper implements LocationBasedScraper<LocationConfig
     }
 
     @Override
-    public Optional<Location> scrape(LocationConfig location) {
-        // TODO repeated in scrapess ... pull out ...
+    public Optional<Location> scrape(LocationIqLocationConfig location) {
         Map<String, Object> values = Map.of("lat", location.getLatitude(), "lon", location.getLongitude());
         String url = Utils.fillTemplate(properties.getUrl(), values);
         ResponseEntity<LocationDto> resp = restTemplate.getForEntity(url, LocationDto.class); // content is text/content -> parse manually ...
@@ -56,20 +55,23 @@ public class LocationIqApiScraper implements LocationBasedScraper<LocationConfig
     }
 
     @Override
-    public List<LocationConfig> getLocationConfigs() {
-        return locationConfigRepository.getLocationConfigs(getSource());
+    public List<LocationIqLocationConfig> getLocationConfigs() {
+        return locationConfigRepository.getLocationIqLocationConfigs();
     }
 
     public Optional<Location> toEnrichedLocation(Location location, @Nullable LocationDto locationDto) {
         if (locationDto != null && locationDto.getAddress() != null) {
+            Optional<String> countyNameOverride = locationConfigRepository.getLocationIqLocationConfig(location.getName()).flatMap(LocationIqLocationConfig::getCountyNameOverride);
+            Optional<String> regionNameOverride = locationConfigRepository.getLocationIqLocationConfig(location.getName()).flatMap(LocationIqLocationConfig::getRegionNameOverride);
+
             AddressDto address = locationDto.getAddress();
             return Optional.of(new Location(
                     location.getName(),
                     location.getLatitude(),
                     location.getLongitude(),
                     address.getMunicipality(),
-                    address.getCounty(),
-                    address.getRegion(),
+                    countyNameOverride.orElse(address.getCounty()),
+                    regionNameOverride.orElse(address.region),
                     true
             ));
         }

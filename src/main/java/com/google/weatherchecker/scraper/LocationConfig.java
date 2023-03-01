@@ -7,6 +7,7 @@ import lombok.ToString;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @RequiredArgsConstructor
@@ -33,6 +34,10 @@ public class LocationConfig {
 
     public double getLongitude() {
         return location.getLongitude();
+    }
+
+    public boolean matches(Location location) {
+        return Objects.equals(location.getName(), this.getLocation().getName());
     }
 
 }

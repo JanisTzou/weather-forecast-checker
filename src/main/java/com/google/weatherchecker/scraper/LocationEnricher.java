@@ -5,6 +5,7 @@ import com.google.weatherchecker.model.Source;
 import com.google.weatherchecker.repository.LocationRepository;
 import com.google.weatherchecker.repository.SerialDatabaseWriter;
 import com.google.weatherchecker.scraper.locationiq.LocationIqApiScraper;
+import com.google.weatherchecker.scraper.locationiq.LocationIqLocationConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class LocationEnricher {
         if (existing.isEmpty() || !existing.get().isComplete()) {
             log.info("Location '{}' is not complete - will enrich it with more details", location.getName());
             Source source = locationIqApiScraper.getSource();
-            Optional<LocationConfig> locationConfig = locationConfigRepository.getLocationConfig(source, location.getName());
+            Optional<LocationIqLocationConfig> locationConfig = locationConfigRepository.getLocationIqLocationConfig(location.getName());
             if (locationConfig.isPresent()) {
                 Consumer<Location> locationProcessor = enrichedLocation -> {
                     log.info("Received enriched location: {}", enrichedLocation);
