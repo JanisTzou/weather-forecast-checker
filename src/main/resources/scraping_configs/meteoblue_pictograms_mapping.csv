@@ -2,16 +2,16 @@ Nr|Description|Total Cloud Coverage
 1|Clear, cloudless sky|0
 2|Clear, few cirrus|10
 3|Clear with cirrus|20
-4|Clear with few low clouds|30
+4|Clear with few low clouds|24
 5|Clear with few low clouds and few cirrus|30
-6|Clear with few low clouds and cirrus|50
+6|Clear with few low clouds and cirrus|45
 7|Partly cloudy|60
-8|Partly cloudy and few cirrus|55
+8|Partly cloudy and few cirrus|62
 9|Partly cloudy and cirrus|70
 10|Mixed with some thunderstorm clouds possible|90
 11|Mixed with few cirrus with some thunderstorm clouds possible|100
 12|Mixed with cirrus and some thunderstorm clouds possible|100
-13|Clear but hazy|10
+13|Clear but hazy|0
 14|Clear but hazy with few cirrus|10
 15|Clear but hazy with cirrus|20
 16|Fog/low stratus clouds|30
