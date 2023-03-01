@@ -117,8 +117,8 @@ public class LocationConfigRepository {
         return CsvFile.fromResourceFile(getPath(configFile)).getLines().stream()
                 .map(l -> new LocationIqLocationConfig(
                         configsByName.get(l.getString(LOCATION_NAME).orElseGet(new Fail<>(LOCATION_NAME))),
-                        l.getString(LOCATIONIQ_COUNTY_NAME_OVERRIDE).orElseGet(new Fail<>(LOCATIONIQ_COUNTY_NAME_OVERRIDE)),
-                        l.getString(LOCATIONIQ_REGION_NAME_OVERRIDE).orElseGet(new Fail<>(LOCATIONIQ_REGION_NAME_OVERRIDE))
+                        l.getString(LOCATIONIQ_COUNTY_NAME_OVERRIDE).orElse(null),
+                        l.getString(LOCATIONIQ_REGION_NAME_OVERRIDE).orElse(null)
                 )).collect(Collectors.toList());
     }
 
