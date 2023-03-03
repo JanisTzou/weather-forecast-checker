@@ -11,9 +11,9 @@ public class JpaLocationMapper {
                 jpaLocation.getName(),
                 jpaLocation.getLatitude(),
                 jpaLocation.getLongitude(),
-                jpaLocation.getMunicipality(),
-                jpaLocation.getCounty(),
-                jpaLocation.getRegion(),
+                jpaLocation.getMunicipality().map(JpaMunicipality::getName).orElse(null),
+                jpaLocation.getCounty().map(JpaCounty::getName).orElse(null),
+                jpaLocation.getRegion().map(JpaRegion::getName).orElse(null),
                 jpaLocation.isComplete()
         );
     }
@@ -22,9 +22,9 @@ public class JpaLocationMapper {
         return new JpaLocation(location.getName(),
                 location.getLatitude(),
                 location.getLongitude(),
-                location.getMunicipality(),
-                location.getCounty(),
-                location.getRegion(),
+                location.getMunicipality().map(JpaMunicipality::new).orElse(null),
+                location.getCounty().map(JpaCounty::new).orElse(null),
+                location.getRegion().map(JpaRegion::new).orElse(null),
                 location.isComplete()
         );
     }

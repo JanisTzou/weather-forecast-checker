@@ -12,7 +12,7 @@ import lombok.*;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class JpaProvider extends JpaEntityBase {
+public class JpaProvider extends JpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "name")

@@ -4,13 +4,13 @@ import com.gargoylesoftware.htmlunit.html.DomElement;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.weatherchecker.htmlunit.HtmlUnitClientFactory;
+import com.google.weatherchecker.model.Forecast;
+import com.google.weatherchecker.model.HourlyForecast;
+import com.google.weatherchecker.model.Source;
+import com.google.weatherchecker.scraper.ForecastScraper;
 import com.google.weatherchecker.scraper.ForecastScrapingProps;
 import com.google.weatherchecker.scraper.LocationConfig;
 import com.google.weatherchecker.scraper.LocationConfigRepository;
-import com.google.weatherchecker.model.Source;
-import com.google.weatherchecker.model.Forecast;
-import com.google.weatherchecker.scraper.ForecastScraper;
-import com.google.weatherchecker.model.HourlyForecast;
 import com.google.weatherchecker.util.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Profile;
@@ -59,7 +59,10 @@ public class ClearOutsideForecastWebScraper implements ForecastScraper<LocationC
                             .map(Integer::parseInt)
                             .flatMap(this::gateDate);
 
-                    Optional<HtmlElement> totalCloudHourlyEl = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_detail_row")).stream().map(d -> (HtmlElement) d).findFirst();
+                    Optional<HtmlElement> totalCloudHourlyEl = getHtmlElementDescendants(day, d -> hasCssClass(d, "fc_detail_row")).stream()
+                            .filter(d -> d.getTextContent().contains("Total Clouds"))
+                            .map(d -> (HtmlElement) d)
+                            .findFirst();
 
                     // expected 24 values ... TODO validation
                     List<Integer> hourCloudCoverages = totalCloudHourlyEl.stream().flatMap(e -> e.getElementsByTagName("li").stream())

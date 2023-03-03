@@ -4,12 +4,12 @@ import com.gargoylesoftware.htmlunit.html.DomNodeList;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.weatherchecker.htmlunit.HtmlUnitClientFactory;
-import com.google.weatherchecker.scraper.LocationConfigRepository;
-import com.google.weatherchecker.scraper.ScrapingProps;
-import com.google.weatherchecker.model.Source;
 import com.google.weatherchecker.model.CloudCoverageMeasurement;
 import com.google.weatherchecker.model.CloudCoverageMeasurements;
+import com.google.weatherchecker.model.Source;
+import com.google.weatherchecker.scraper.LocationConfigRepository;
 import com.google.weatherchecker.scraper.NonLocationBasedScraper;
+import com.google.weatherchecker.scraper.ScrapingProps;
 import com.google.weatherchecker.util.Utils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Profile;
@@ -20,7 +20,10 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Log4j2

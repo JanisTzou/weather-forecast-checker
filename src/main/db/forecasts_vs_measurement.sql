@@ -12,6 +12,8 @@ where  source_id = 1
 ;
 
 select source,
+       round(avg(measured_total)) avg_measured_total,
+       round(avg(forecast_total)) avg_forecast_total,
        round(avg(diff_abs)) avg_diff_abs,
        round(avg(diff))     avg_diff,
        count(hour)          record_count,
@@ -32,9 +34,10 @@ from (select frcst.source_name                                                  
              msrmt.name                                                                          as location,
              frcst.forecast_scraped_dt                                                           as forecast_scraped_dt,
              frcst.forecast_scraped_hour_dt                                                      as forecast_scraped_hour_dt,
-             hour,
-             msrmt.cloud_coverage_total                                                          as measured,
-             frcst.cloud_coverage_total                                                          as forecast,
+             frcst.hour,
+             msrmt.date_time,
+             msrmt.cloud_coverage_total                                                          as measured_total,
+             frcst.cloud_coverage_total                                                          as forecast_total,
              abs(msrmt.cloud_coverage_total - frcst.cloud_coverage_total)                        as diff_abs,
              msrmt.cloud_coverage_total - frcst.cloud_coverage_total                             as diff,
              extract(epoch from (msrmt.scraped_hour_dt - frcst.forecast_scraped_hour_dt)) / 3600 as hours_after_forecast
@@ -51,30 +54,33 @@ from (select frcst.source_name                                                  
                      inner join forecast_tbl ft on hft.forecast_id = ft.id
                      inner join source_tbl st on st.id = ft.source_id
             where hft.hour >= ft.scraped -- ensures that we do not include "forecast of the past"
+--               and ft.location_id = 1
+              and ft.source_id = 2
               and (case
-                       when (true) then hft.hour >= now() - interval '36 hours' and hft.hour <= now()
-                       when (false) then hft.hour >= '2023-02-28 00:00:00' and hft.hour <= '2023-02-28 23:59:59'
+                       when (true) then hft.hour >= now() - interval '4 hours' and hft.hour <= now()
+                       when (false) then hft.hour >= '2023-03-01 00:00:00' and hft.hour <= '2023-03-01 23:59:59'
                        else true
                 end)
                 -- for another usecase we want whole past days intervals
             group by ft.source_id, st.name, ft.location_id, hft.hour
            ) as frcst
-               inner join (select ccm.id,
-                                  location_id,
-                                  name,
-                                  date_time,
-                                  cloud_coverage_total,
-                                  date_trunc('hour', scraped) as scraped_hour_dt
+               inner join (select max(ccm.id),
+                                  ccm.location_id,
+                                  l.name,
+                                  ccm.date_time,
+                                  avg(ccm.cloud_coverage_total) as cloud_coverage_total,
+                                  date_trunc('hour', max(ccm.scraped)) as scraped_hour_dt
                            from cloud_coverage_measurement_tbl as ccm
                                     inner join location_tbl as l on ccm.location_id = l.id
-                               and (case
-                                        when (false) then l.region in ('Střední Čechy', 'Praha')
-                                         when (false) then l.county in ('Středočeský kraj', 'Hlavní město Praha')
-                                        else true
-                                   end)
+                                    inner join region_tbl as r on l.region_id = r.id
+                                         and (case when (false) then r.name in ('Střední Čechy') else true end)
+                                    inner join county_tbl as c on l.county_id = c.id
+                                         and (case when (false) then c.name in ('Středočeský kraj') else true end)
                            where source_id = 6
-                             and ccm.cloud_coverage_total is not null) as msrmt on frcst.location_id = msrmt.location_id
-          and frcst.hour = msrmt.date_time
+                             and ccm.cloud_coverage_total is not null
+                           group by ccm.location_id, l.name, ccm.date_time
+                   ) as msrmt on frcst.location_id = msrmt.location_id
+                            and frcst.hour = msrmt.date_time
      ) comparison
 group by comparison.source
 order by avg_diff_abs

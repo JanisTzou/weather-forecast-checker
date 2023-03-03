@@ -5,13 +5,15 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ComparisonDto {
+public class ForecastVerificationDto {
 
     private String source;
+    private int avgForecastCloudTotal;
+    private int avgMeasuredCloudTotal;
     private int avgDiffAbs;
     private int avgDiff;
     private int recordCount;
-    private String forecastDescription;
-    private String forecastErrorDescription;
+    private String forecastDesc;
+    private String forecastErrorDesc;
 
 }

@@ -8,13 +8,13 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class ComparisonsDto {
+public class SourcesComparisonDto {
 
     private final Integer pastHours;
     private final String region;
     private final String county;
     private final LocalDate date;
 
-    private List<ComparisonDto> comparisons;
+    private List<ForecastVerificationDto> verifications;
 
 }

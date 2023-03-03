@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Getter
 @ToString
@@ -21,6 +23,18 @@ public class Location {
 
     public Location(String name, double latitude, double longitude) {
         this(name, latitude, longitude, null, null, null, false);
+    }
+
+    public Optional<String> getMunicipality() {
+        return Optional.ofNullable(municipality);
+    }
+
+    public Optional<String> getCounty() {
+        return Optional.ofNullable(county);
+    }
+
+    public Optional<String> getRegion() {
+        return Optional.ofNullable(region);
     }
 
 }

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class JpaHourlyForecast extends JpaEntityBase {
+public class JpaHourlyForecast extends JpaEntity {
 
     @Column(name = "hour", nullable = false)
     private LocalDateTime hour;

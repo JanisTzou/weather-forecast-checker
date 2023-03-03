@@ -1,29 +1,28 @@
 package com.google.weatherchecker.repository;
 
-
-import com.google.weatherchecker.model.Source;
+import com.google.weatherchecker.model.ForecastVerificationType;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "source_tbl")
+@Table(name = "forecast_verification_type_tbl")
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class JpaSource extends JpaEntity {
+public class JpaForecastVerificationType extends JpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "name")
-    private Source name;
+    private ForecastVerificationType name;
 
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
 
-        if (!(o instanceof JpaSource other))
+        if (!(o instanceof JpaForecastVerificationType other))
             return false;
 
         return id != null &&

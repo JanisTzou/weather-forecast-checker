@@ -32,4 +32,5 @@ public class MeasurementRepositoryImpl implements MeasurementRepository {
             log.error("Failed to save measurement: {}", measurement);
         }
     }
+
 }

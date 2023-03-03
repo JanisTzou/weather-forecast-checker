@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class JpaCloudCoverageMeasurement extends JpaEntityBase {
+public class JpaCloudCoverageMeasurement extends JpaEntity {
 
     @Column(name = "scraped", nullable = false)
     private LocalDateTime scraped;

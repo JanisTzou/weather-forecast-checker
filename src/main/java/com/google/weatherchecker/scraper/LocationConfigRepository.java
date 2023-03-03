@@ -3,9 +3,9 @@ package com.google.weatherchecker.scraper;
 import com.google.weatherchecker.model.Location;
 import com.google.weatherchecker.model.Source;
 import com.google.weatherchecker.scraper.accuweather.AccuWeatherLocationConfig;
+import com.google.weatherchecker.scraper.chmu.ChmuLocationConfig;
 import com.google.weatherchecker.scraper.locationiq.LocationIqLocationConfig;
 import com.google.weatherchecker.scraper.meteoblue.MeteobluePictorgramsConfig;
-import com.google.weatherchecker.scraper.chmu.ChmuLocationConfig;
 import com.google.weatherchecker.util.CsvFile;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -39,6 +38,7 @@ public class LocationConfigRepository {
         locationsConfigsLoaders.put(Source.CLEAR_OUTSIDE_WEB, () -> getLocationConfigs("clearoutside_web_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_WEB, () -> getLocationConfigs("meteoblue_web_config.csv"));
+        locationsConfigsLoaders.put(Source.MET_NORWAY_API, () -> getLocationConfigs("met_norway_api_config.csv"));
     }
 
     public List<AccuWeatherLocationConfig> getAccuWeatherLocationConfigs() {

@@ -1,7 +1,10 @@
 package com.google.weatherchecker.repository;
 
-import lombok.Data;
+import com.google.weatherchecker.model.ForecastVerification;
+import com.google.weatherchecker.model.ForecastVerificationType;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,23 +14,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public interface ForecastAnalysisRepository {
+public interface ForecastVerificationRepository {
 
-    List<Comparison> query(Criteria criteria);
+    List<LocalDate> getMissingDayVerificationDates();
 
-    @Data
+    void deleteAllByType(ForecastVerificationType type);
+
+    List<ForecastVerification> findVerifications(Criteria criteria);
+
+    List<ForecastVerification> calculateVerifications(Criteria criteria);
+
+    void save(List<ForecastVerification> verifications);
+
+    void save(ForecastVerification forecastVerification);
+
+    void createDailyVerifications();
+
+    void updatePastHoursVerifications();
+
+
     @RequiredArgsConstructor
-    public static class Comparison {
-        private final String source;
-        private final int avgDiffAbs;
-        private final int avgDiff;
-        private final int records;
-        private final String forecastDescription;
-        private final String forecastErrorDescription;
-    }
-
-    @RequiredArgsConstructor
-    public static class Criteria {
+    @Getter
+    class Criteria {
 
         private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -37,31 +45,17 @@ public interface ForecastAnalysisRepository {
         private final LocalDate date;
 
         public static Criteria from(Integer pastHours, String region, String county, LocalDate date) {
+            // TODO verify validity ...
             return new Criteria(pastHours, region, county, date);
         }
 
-        public static Criteria forPastHoursAndRegion(Integer pastHours, String region) {
-            return new Criteria(pastHours, region, null, null);
-        }
-
-        public static Criteria forPastHoursAndCounty(Integer pastHours, String county) {
-            return new Criteria(pastHours, null, county, null);
-        }
-
-        public static Criteria forDateAndCounty(LocalDate date, String county) {
-            return new Criteria(null, null, county, date);
-        }
-
-        public static Criteria forDateAndRegion(LocalDate date, String region) {
-            return new Criteria(null, region, null, date);
-        }
-
-        public static Criteria forDate(LocalDate date) {
-            return new Criteria(null, null, null, date);
-        }
-
-        public static Criteria forPastHours(Integer pastHours) {
-            return new Criteria(pastHours, null, null, null);
+        public ForecastVerificationType getVerificationType() {
+            if (pastHours != null) {
+                return ForecastVerificationType.PAST_N_HOURS;
+            } else if (date != null) {
+                return ForecastVerificationType.DAILY;
+            }
+            return ForecastVerificationType.ALL_TIME;
         }
 
         public Map<String, Object> toParamsMap() {

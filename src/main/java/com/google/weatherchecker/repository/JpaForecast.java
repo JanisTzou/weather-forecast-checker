@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class JpaForecast extends JpaEntityBase {
+public class JpaForecast extends JpaEntity {
 
     @Column(name = "scraped", nullable = false)
     private LocalDateTime scraped;

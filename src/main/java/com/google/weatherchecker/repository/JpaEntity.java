@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class JpaEntityBase {
+public abstract class JpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

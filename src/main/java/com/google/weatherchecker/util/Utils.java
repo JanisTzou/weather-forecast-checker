@@ -42,6 +42,11 @@ public class Utils {
         return sub.replace(template.replace("|", "")); // hack so that Spring does not try to fill in our own placeholders during ctx initialisation
     }
 
+    public static String fillSqlTemplate(String sql, Map<String, Object> valuesMap) {
+        StringSubstitutor sub = new StringSubstitutor(valuesMap);
+        return sub.replace(sql.replace("|", "")); // hack so that Spring does not try to fill in our own placeholders during ctx initialisation
+    }
+
     public static <T> Stream<T> toStream(Iterator<T> iterator) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
     }
