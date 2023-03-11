@@ -39,6 +39,7 @@ public class LocationConfigRepository {
         locationsConfigsLoaders.put(Source.METEOBLUE_API, () -> getLocationConfigs("meteoblue_api_config.csv"));
         locationsConfigsLoaders.put(Source.METEOBLUE_WEB, () -> getLocationConfigs("meteoblue_web_config.csv"));
         locationsConfigsLoaders.put(Source.MET_NORWAY_API, () -> getLocationConfigs("met_norway_api_config.csv"));
+        locationsConfigsLoaders.put(Source.OPEN_METEO_ECMWF, () -> getLocationConfigs("open_meteo_ecmwf_api_config.csv"));
     }
 
     public List<AccuWeatherLocationConfig> getAccuWeatherLocationConfigs() {

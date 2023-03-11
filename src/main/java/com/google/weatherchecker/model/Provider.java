@@ -8,6 +8,7 @@ public enum Provider {
     METEOBLUE,
     MET_NORWAY,
     CHMU,
-    LOCATION_IQ
+    LOCATION_IQ,
+    OPEN_METEO
 
 }

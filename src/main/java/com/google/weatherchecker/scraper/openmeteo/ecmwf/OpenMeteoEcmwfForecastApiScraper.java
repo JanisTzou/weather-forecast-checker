@@ -1,13 +1,15 @@
-package com.google.weatherchecker.scraper.meteoblue;
+package com.google.weatherchecker.scraper.openmeteo.ecmwf;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.weatherchecker.model.Forecast;
+import com.google.weatherchecker.model.HourlyForecast;
 import com.google.weatherchecker.model.Location;
 import com.google.weatherchecker.model.Source;
-import com.google.weatherchecker.scraper.*;
-import com.google.weatherchecker.model.Forecast;
 import com.google.weatherchecker.scraper.ForecastScraper;
-import com.google.weatherchecker.model.HourlyForecast;
+import com.google.weatherchecker.scraper.ForecastScrapingProps;
+import com.google.weatherchecker.scraper.LocationConfig;
+import com.google.weatherchecker.scraper.LocationConfigRepository;
 import com.google.weatherchecker.util.Utils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,16 +29,16 @@ import java.util.stream.IntStream;
 
 @Log4j2
 @Component
-@Profile({"meteoblue-api", "default"})
-public class MeteoblueForecastApiScraper implements ForecastScraper<LocationConfig> {
+@Profile({"open-meteo-ecmwf", "default"})
+public class OpenMeteoEcmwfForecastApiScraper implements ForecastScraper<LocationConfig> {
 
     private final RestTemplate restTemplate;
-    private final MeteoblueForecastApiScraperProps props;
+    private final OpenMeteoEcmwfForecastApiScraperProps props;
     private final LocationConfigRepository locationConfigRepository;
 
-    public MeteoblueForecastApiScraper(RestTemplate restTemplate,
-                                       MeteoblueForecastApiScraperProps props,
-                                       LocationConfigRepository locationConfigRepository) {
+    public OpenMeteoEcmwfForecastApiScraper(RestTemplate restTemplate,
+                                            OpenMeteoEcmwfForecastApiScraperProps props,
+                                            LocationConfigRepository locationConfigRepository) {
         this.restTemplate = restTemplate;
         this.props = props;
         this.locationConfigRepository = locationConfigRepository;
@@ -62,7 +65,7 @@ public class MeteoblueForecastApiScraper implements ForecastScraper<LocationConf
 
     @Override
     public Source getSource() {
-        return Source.METEOBLUE_API;
+        return Source.OPEN_METEO_ECMWF;
     }
 
     @Override
@@ -72,58 +75,56 @@ public class MeteoblueForecastApiScraper implements ForecastScraper<LocationConf
 
     private Optional<Forecast> mapToForecast(ForecastDto forecastDto, Location location) {
         if (forecastDto != null) {
-            List<HourlyForecast> hourlyForecasts = mapToHourForcasts(forecastDto);
+            List<HourlyForecast> hourlyForecasts = mapToHourForecasts(forecastDto);
             return Optional.of(new Forecast(LocalDateTime.now(), getSource(), location, hourlyForecasts));
         }
         return Optional.empty();
     }
 
-    private List<HourlyForecast> mapToHourForcasts(ForecastDto forecastDto) {
-        Data1Hr data1Hr = forecastDto.getData1Hr();
-        int count = Math.min(data1Hr.getTime().size(), data1Hr.getTotalCloudCover().size());
-        int maxHoursToInclude = props.getDays() * 24;
-        int hours = Math.min(count, maxHoursToInclude);
-        return IntStream.range(0, hours)
-                .mapToObj(h -> new HourlyForecast(
-                                data1Hr.getTime().get(h),
-                                data1Hr.getTotalCloudCover().get(h),
-                                null
-                        )
+    private List<HourlyForecast> mapToHourForecasts(ForecastDto forecastDto) {
+        Hourly hourly = forecastDto.getHourly();
+        int count = Math.min(hourly.getTime().size(), hourly.getTotalCloudCover().size());
+        int maxThreeHourIntervalsToInclude = props.getDays() * 7;
+        int threeHoursCount = Math.min(count, maxThreeHourIntervalsToInclude);
+        return IntStream.range(0, threeHoursCount)
+                .mapToObj(h -> mapToOneHourIntervals(hourly, h)
                 )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    // TODO decide if spreading the 3 hour intervals forewrds is corect or not ...
+    private List<HourlyForecast> mapToOneHourIntervals(Hourly hourly, int h) {
+        return IntStream.range(0, 3)
+                .mapToObj(incr -> {
+                    return new HourlyForecast(
+                            hourly.getTime().get(h).plusHours(incr + 1), // TODO +1 temporary conversion GMT to CEST
+                            hourly.getTotalCloudCover().get(h),
+                            null
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
     @Data
     @NoArgsConstructor
     public static class ForecastDto {
-        @JsonProperty("metadata")
-        private Metadata metadata;
+        @JsonProperty("timezone_abbreviation")
+        private String timezoneAbbreviation;
 
-        @JsonProperty("data_1h")
-        private Data1Hr data1Hr;
+        @JsonProperty("hourly")
+        private Hourly hourly;
     }
 
     @Data
     @NoArgsConstructor
-    public static class Data1Hr {
+    public static class Hourly {
         @JsonProperty("time")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm")
         private List<LocalDateTime> time;
 
-        @JsonProperty("totalcloudcover")
+        @JsonProperty("cloudcover")
         private List<Integer> totalCloudCover;
-    }
-
-    @Data
-    @NoArgsConstructor
-    public static class Metadata {
-        @JsonProperty("modelrun_utc")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime modelRunUtc;
-
-        @JsonProperty("modelrun_updatetime_utc")
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime modelRunUpdateTimeUtc;
     }
 
 }
