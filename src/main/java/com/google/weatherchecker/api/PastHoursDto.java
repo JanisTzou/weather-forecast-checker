@@ -3,14 +3,14 @@ package com.google.weatherchecker.api;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class ChartSeriesDto {
+public class PastHoursDto {
 
-    private String source;
-    private String title;
-    private List<ChartValueDto> values;
+    private final Integer pastHours;
+    private final List<VerificationDto> verifications;
 
 }

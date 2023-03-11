@@ -4,6 +4,7 @@ import com.google.weatherchecker.model.ForecastVerification;
 import com.google.weatherchecker.model.ForecastVerificationType;
 import com.google.weatherchecker.model.Source;
 import com.google.weatherchecker.util.Utils;
+import com.google.weatherchecker.verification.PastHoursProps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,16 +34,11 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
                    round(avg(diff))     AS avg_diff,
                    count(hour)          AS record_count
             FROM (SELECT frcst.source_name                                                                   AS source,
-                         msrmt.name                                                                          AS location,
-                         frcst.forecast_scraped_dt                                                           AS forecast_scraped_dt,
-                         frcst.forecast_scraped_hour_dt                                                      AS forecast_scraped_hour_dt,
                          frcst.hour,
-                         msrmt.date_time,
                          msrmt.cloud_coverage_total                                                          AS measured_total,
                          frcst.cloud_coverage_total                                                          AS forecast_total,
                          abs(msrmt.cloud_coverage_total - frcst.cloud_coverage_total)                        AS diff_abs,
-                         msrmt.cloud_coverage_total - frcst.cloud_coverage_total                             AS diff,
-                         extract(epoch FROM (msrmt.scraped_hour_dt - frcst.forecast_scraped_hour_dt)) / 3600 AS hours_after_forecast
+                         msrmt.cloud_coverage_total - frcst.cloud_coverage_total                             AS diff
                   FROM (SELECT ft.source_id,
                                st.name                             AS source_name,
                                ft.location_id,
@@ -60,7 +57,6 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
                                    WHEN (:includeDateBounds) then hft.hour >= '${fromDateTime}' AND hft.hour <= '${toDateTime}'
                                    ELSE true
                             END)
-                            -- for another usecase we want whole past days intervals
                         GROUP BY ft.source_id, st.name, ft.location_id, hft.hour
                        ) AS frcst
                            INNER JOIN (SELECT max(ccm.id),
@@ -86,6 +82,7 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
             ;
             """;
 
+    // TODO the last day should not be included ...
     private static final String missingDayVerificationsDates = """
                     SELECT DISTINCT DATE(ft.scraped - INTERVAL '1 day') AS date
                     FROM forecast_tbl ft
@@ -97,47 +94,62 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
             """;
 
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
     private final JpaForecastVerificationRepository jpaForecastVerificationRepository;
     private final JpaForecastVerificationMapper jpaForecastVerificationMapper;
     private final JpaSourceRepository jpaSourceRepository;
     private final JpaForecastVerificationTypeRepository jpaForecastVerificationTypeRepository;
     private final JpaRegionRepository jpaRegionRepository;
     private final JpaCountyRepository jpaCountyRepository;
+    private final PastHoursProps pastHoursProps;
 
 
     @Override
-    public List<LocalDate> getMissingDayVerificationDates() {
+    public List<LocalDate> getMissingDailyVerificationDates() {
         return namedParameterJdbcTemplate.query(missingDayVerificationsDates, (rs, rowNum) ->
                 rs.getDate("date").toLocalDate()
         );
     }
 
     @Override
-    public void deleteAllByType(ForecastVerificationType type) {
-        jpaForecastVerificationRepository.deleteAllByTypeName(type);
-    }
-
-    @Override
-    public List<ForecastVerification> findVerifications(Criteria criteria) {
-        return jpaForecastVerificationRepository.findAllByPastHoursAndDayAndCountyNameAndRegionName(
+    public List<ForecastVerification> findVerifications(VerificationCriteria criteria) {
+        List<JpaForecastVerification> verifications;
+        if (criteria.getFromDate() == null && criteria.getToDate() == null) {
+            if (criteria.getPastHours() != null) {
+                verifications = jpaForecastVerificationRepository.findAllByPastHoursAndCountyNameAndRegionName(
                         criteria.getPastHours(),
+                        criteria.getCounty(),
+                        criteria.getRegion()
+                );
+            } else if (criteria.getDate() != null) {
+                verifications = jpaForecastVerificationRepository.findAllByDayAndCountyNameAndRegionName(
                         criteria.getDate(),
                         criteria.getCounty(),
                         criteria.getRegion()
-                )
-                .stream()
+                );
+            } else {
+                log.warn("Unhandled case ...");
+                verifications = Collections.emptyList();
+            }
+        } else {
+            verifications = jpaForecastVerificationRepository.findAllByDayBetweenAndCountyNameAndRegionNameOrderByDay(
+                    criteria.getFromDate(),
+                    criteria.getToDate(),
+                    criteria.getCounty(),
+                    criteria.getRegion()
+            );
+        }
+        return verifications.stream()
                 .map(jpaForecastVerificationMapper::toDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<ForecastVerification> calculateVerifications(Criteria criteria) {
+    public List<ForecastVerification> calculateVerifications(VerificationCriteria criteria) {
         Map<String, Object> params = criteria.toParamsMap();
+        String sql = Utils.fillTemplate(forecastVsMeasurementForPastHoursSql, params);
         SqlParameterSource parameters = new MapSqlParameterSource(params);
 
-        String sql = Utils.fillTemplate(forecastVsMeasurementForPastHoursSql, params);
-
+        // TODO maybe we want different ForecastVerifications for hourly vs daily verification ... date range ...
         return namedParameterJdbcTemplate.query(sql, parameters, (rs, rowNum) -> new ForecastVerification(
                 LocalDateTime.now(),
                 criteria.getVerificationType(),
@@ -160,12 +172,13 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
         for (ForecastVerification verification : verifications) {
             save(verification);
         }
+        log.info("Saved {} verifications", verifications.size());
     }
 
     @Transactional
     @Override
     public void save(ForecastVerification verification) {
-        log.info("Saving verification: {}", verification); // TODO trace ...
+        log.trace("Saving verification: {}", verification);
         JpaForecastVerification jpaVerification = jpaForecastVerificationMapper.toEntity(verification);
         Optional<JpaSource> jpaSource = jpaSourceRepository.findFirstByName(verification.getSource());
         String region = verification.getRegion();
@@ -194,22 +207,22 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
 
     @Override
     public void createDailyVerifications() {
-        List<LocalDate> missingDays = getMissingDayVerificationDates();
+        List<LocalDate> missingDays = getMissingDailyVerificationDates();
 
         for (LocalDate date : missingDays) {
-            queryAndSave(Criteria.from(null, null, null, date));
+            queryAndSave(VerificationCriteria.builder().setDate(date).build());
         }
 
         for (JpaCounty jpaCounty : jpaCountyRepository.findAll()) {
             for (LocalDate date : missingDays) {
-                queryAndSave(Criteria.from(null, null, jpaCounty.getName(), date));
+                queryAndSave(VerificationCriteria.builder().setCounty(jpaCounty.getName()).setDate(date).build());
             }
         }
 
         // regions
         for (JpaRegion jpaRegion : jpaRegionRepository.findAll()) {
             for (LocalDate date : missingDays) {
-                queryAndSave(Criteria.from(null, jpaRegion.getName(), null, date));
+                queryAndSave(VerificationCriteria.builder().setRegion(jpaRegion.getName()).setDate(date).build());
             }
         }
     }
@@ -217,47 +230,48 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
     @Override
     public void updatePastHoursVerifications() {
 
-        // TODO have this somewhere configured ...
-        List<Integer> pastHours = List.of(12, 24, 36);
+        List<Integer> pastHours = pastHoursProps.getPastHours();
 
         List<Integer> idsToRemove = jpaForecastVerificationRepository.findAllIdsByType(ForecastVerificationType.PAST_N_HOURS);
 
         // whole Czech republic ...
         for (Integer hours : pastHours) {
             jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, null, null);
-            queryAndSave(Criteria.from(hours, null, null, null));
+            queryAndSave(VerificationCriteria.builder().setPastHours(hours).build());
         }
 
         // by county
-        for (JpaCounty jpaCounty : jpaCountyRepository.findAll()) {
+        for (JpaCounty county : jpaCountyRepository.findAll()) {
             for (Integer hours : pastHours) {
-                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, jpaCounty.getName(), null);
-                queryAndSave(Criteria.from(hours, null, jpaCounty.getName(), null));
+                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, county.getName(), null);
+                queryAndSave(VerificationCriteria.builder().setPastHours(hours).setCounty(county.getName()).build());
             }
         }
 
         // regions
-        for (JpaRegion jpaRegion : jpaRegionRepository.findAll()) {
+        for (JpaRegion region : jpaRegionRepository.findAll()) {
             for (Integer hours : pastHours) {
-                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, null, jpaRegion.getName());
-                queryAndSave(Criteria.from(hours, jpaRegion.getName(), null, null));
+                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, null, region.getName());
+                queryAndSave(VerificationCriteria.builder().setPastHours(hours).setRegion(region.getName()).build());
             }
         }
 
         // in case the hour list changed, there might be some left-overs to delete ...
         for (Integer id : idsToRemove) {
-            // TODO wrap in try catch ...
             if (jpaForecastVerificationRepository.existsById(id)) {
                 log.info("Removing leftover verification");
                 jpaForecastVerificationRepository.deleteById(id);
             }
         }
+
     }
 
-    private void queryAndSave(Criteria criteria) {
+    private void queryAndSave(VerificationCriteria criteria) {
         List<ForecastVerification> verifications = calculateVerifications(criteria);
+        if (verifications.isEmpty()) {
+            log.info("Got no verifications for: {}", criteria);
+        }
         save(verifications);
     }
-
 
 }

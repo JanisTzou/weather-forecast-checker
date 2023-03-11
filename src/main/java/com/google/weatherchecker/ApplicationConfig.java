@@ -19,6 +19,7 @@ import java.util.List;
 @Configuration
 @PropertySource("classpath:application.properties")
 @PropertySource("classpath:scraping.properties")
+@PropertySource("classpath:api.properties")
 public class ApplicationConfig {
 
     @Bean

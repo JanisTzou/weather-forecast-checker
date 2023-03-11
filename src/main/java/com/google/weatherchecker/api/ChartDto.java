@@ -8,7 +8,6 @@ import java.util.List;
 public class ChartDto {
 
     private final String title;
-
     private final List<ChartSeriesDto> grapValuesList;
 
 }

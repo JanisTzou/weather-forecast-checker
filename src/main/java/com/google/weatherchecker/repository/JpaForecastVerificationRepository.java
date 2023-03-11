@@ -11,17 +11,23 @@ import java.util.List;
 
 public interface JpaForecastVerificationRepository extends JpaRepository<JpaForecastVerification, Integer> {
 
-    void deleteAllByTypeName(ForecastVerificationType type_name);
-
     @Transactional
     @Modifying
     @Query("select p.id from JpaForecastVerification p where p.type.name = ?1")
     List<Integer> findAllIdsByType(ForecastVerificationType type);
 
-    List<JpaForecastVerification> findAllByPastHoursAndDayAndCountyNameAndRegionName(Integer pastHours,
-                                                                                     LocalDate day,
-                                                                                     String county,
-                                                                                     String region);
+    List<JpaForecastVerification> findAllByDayAndCountyNameAndRegionName(LocalDate day,
+                                                                         String county,
+                                                                         String region);
+
+    List<JpaForecastVerification> findAllByPastHoursAndCountyNameAndRegionName(Integer pastHours,
+                                                                               String county,
+                                                                               String region);
+
+    List<JpaForecastVerification> findAllByDayBetweenAndCountyNameAndRegionNameOrderByDay(LocalDate fromDate,
+                                                                                          LocalDate toDate,
+                                                                                          String county,
+                                                                                          String region);
 
     @Transactional
     void deleteAllByPastHoursAndCountyNameAndRegionName(Integer pastHours,

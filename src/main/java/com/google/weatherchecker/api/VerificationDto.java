@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class ForecastVerificationDto {
+public class VerificationDto {
 
     private String source;
     private int avgForecastCloudTotal;

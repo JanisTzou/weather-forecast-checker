@@ -3,18 +3,16 @@ package com.google.weatherchecker.api;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class SourcesComparisonDto {
+public class MainPageDto {
 
-    private final Integer pastHours;
     private final String region;
     private final String county;
-    private final LocalDate date;
+    private final List<PastHoursDto> pastHoursDtos;
 
-    private List<ForecastVerificationDto> verifications;
+    private final ChartDto chartDto;
 
 }

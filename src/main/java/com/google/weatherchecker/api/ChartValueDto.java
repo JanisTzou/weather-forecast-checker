@@ -1,5 +1,6 @@
 package com.google.weatherchecker.api;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -9,8 +10,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class ChartValueDto {
 
-    private LocalDate date;
-    private int avgDiffAbs;
-    private int avgDiff;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    private final LocalDate date;
+    private final int avgDiffAbs;
+    private final int avgDiff;
 
 }
