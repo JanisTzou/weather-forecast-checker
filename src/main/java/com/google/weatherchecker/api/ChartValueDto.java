@@ -14,5 +14,6 @@ public class ChartValueDto {
     private final LocalDate date;
     private final int avgDiffAbs;
     private final int avgDiff;
+    private final int recordCount;
 
 }

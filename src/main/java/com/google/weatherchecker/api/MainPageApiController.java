@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -21,9 +22,8 @@ public class MainPageApiController {
     private final MainPageApiService mainPageApiService;
 
     @GetMapping(value = "/main-page", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MainPageDto> getComparisons(@RequestParam(value = "county", required = false) String county,
-                                                      @RequestParam(value = "region", required = false) String region) {
-        Optional<MainPageDto> mainPage = mainPageApiService.getMainPage(region, county);
+    public ResponseEntity<MainPageDto> getComparisons(@RequestParam(value = "counties", required = false) List<String> counties) {
+        Optional<MainPageDto> mainPage = mainPageApiService.getMainPage(counties);
         if (mainPage.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } else {

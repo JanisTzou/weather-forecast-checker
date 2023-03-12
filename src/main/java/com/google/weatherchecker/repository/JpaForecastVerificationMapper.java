@@ -24,8 +24,7 @@ public class JpaForecastVerificationMapper {
                 jpaVerification.getRecordCount(),
                 jpaVerification.getPastHours(),
                 jpaVerification.getDay(),
-                jpaVerification.getCounty().map(JpaCounty::getName).orElse(null),
-                jpaVerification.getRegion().map(JpaRegion::getName).orElse(null)
+                jpaVerification.getCounty().map(JpaCounty::getName).orElse(null)
         );
     }
 
@@ -41,7 +40,6 @@ public class JpaForecastVerificationMapper {
                 verification.getRecordCount(),
                 verification.getPastHours(),
                 verification.getDay(),
-                new JpaRegion(verification.getRegion()),
                 new JpaCounty(verification.getCounty())
         );
     }

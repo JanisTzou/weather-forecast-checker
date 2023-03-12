@@ -9,10 +9,9 @@ import java.util.List;
 @AllArgsConstructor
 public class MainPageDto {
 
-    private final String region;
-    private final String county;
-    private final List<PastHoursDto> pastHoursDtos;
-
-    private final ChartDto chartDto;
+    private final String title;
+    private final List<String> counties;
+    private final List<PastHoursDto> pastHours;
+    private final ChartDto dailyChart;
 
 }

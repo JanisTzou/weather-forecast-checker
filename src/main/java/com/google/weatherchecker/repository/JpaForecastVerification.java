@@ -49,17 +49,8 @@ public class JpaForecastVerification extends JpaEntity {
     private LocalDate day;
 
     @ManyToOne
-    @JoinColumn(name = "region_id", nullable = true)
-    private JpaRegion region;
-
-    @ManyToOne
     @JoinColumn(name = "county_id", nullable = true)
     private JpaCounty county;
-
-
-    public Optional<JpaRegion> getRegion() {
-        return Optional.ofNullable(region);
-    }
 
     public Optional<JpaCounty> getCounty() {
         return Optional.ofNullable(county);

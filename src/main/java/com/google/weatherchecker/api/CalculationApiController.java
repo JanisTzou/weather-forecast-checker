@@ -30,10 +30,9 @@ public class CalculationApiController {
     @GetMapping(value = "/comparison", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<VerificationDto>> getComparisons(@RequestParam(value = "pastHours", required = false) Integer pastHours,
                                                                 @RequestParam(value = "county", required = false) String county,
-                                                                @RequestParam(value = "region", required = false) String region,
                                                                 @RequestParam(value = "date", required = false) LocalDate date) { // TODO add date range?
 
-        VerificationCriteria criteria = VerificationCriteria.builder().setPastHours(pastHours).setRegion(region).setCounty(county).setDate(date).build();
+        VerificationCriteria criteria = VerificationCriteria.builder().setPastHours(pastHours).addCounty(county).setDate(date).build();
 
         List<ForecastVerification> forecastVerifications = repository.findVerifications(criteria);
         if (forecastVerifications.isEmpty()) {

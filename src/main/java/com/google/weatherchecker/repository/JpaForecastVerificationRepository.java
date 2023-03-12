@@ -16,21 +16,24 @@ public interface JpaForecastVerificationRepository extends JpaRepository<JpaFore
     @Query("select p.id from JpaForecastVerification p where p.type.name = ?1")
     List<Integer> findAllIdsByType(ForecastVerificationType type);
 
-    List<JpaForecastVerification> findAllByDayAndCountyNameAndRegionName(LocalDate day,
-                                                                         String county,
-                                                                         String region);
+    List<JpaForecastVerification> findAllByDayAndCountyIsNull(LocalDate day);
 
-    List<JpaForecastVerification> findAllByPastHoursAndCountyNameAndRegionName(Integer pastHours,
-                                                                               String county,
-                                                                               String region);
+    List<JpaForecastVerification> findAllByDayAndCountyNameIn(LocalDate day,
+                                                              List<String> counties);
 
-    List<JpaForecastVerification> findAllByDayBetweenAndCountyNameAndRegionNameOrderByDay(LocalDate fromDate,
-                                                                                          LocalDate toDate,
-                                                                                          String county,
-                                                                                          String region);
+    List<JpaForecastVerification> findAllByPastHoursAndCountyIsNull(Integer pastHours);
+
+    List<JpaForecastVerification> findAllByPastHoursAndCountyNameIn(Integer pastHours,
+                                                                    List<String> counties);
+
+    List<JpaForecastVerification> findAllByDayBetweenAndCountyIsNullOrderByDay(LocalDate fromDate,
+                                                                               LocalDate toDate);
+
+    List<JpaForecastVerification> findAllByDayBetweenAndCountyNameInOrderByDay(LocalDate fromDate,
+                                                                               LocalDate toDate,
+                                                                               List<String> counties);
 
     @Transactional
-    void deleteAllByPastHoursAndCountyNameAndRegionName(Integer pastHours,
-                                                        String county,
-                                                        String region);
+    void deleteAllByPastHoursAndCountyName(Integer pastHours,
+                                           String county);
 }

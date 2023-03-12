@@ -42,8 +42,8 @@ FROM (SELECT frcst.source_name                                                  
                      INNER JOIN source_tbl st ON st.id = ft.source_id
 --             WHERE hft.hour = (date_trunc('hour', ft.scraped) + interval '6 hours')
                WHERE hft.hour >= ft.scraped -- ensures that we do not include "forecast of the past"
---               AND ft.location_id = 1
---               AND ft.source_id = 2
+--               AND ft.location_id = 19
+--               AND ft.source_id = 4
               AND (CASE
                        WHEN (true) THEN hft.hour >= NOW() - interval '200 hours' AND hft.hour <= NOW()
                        WHEN (false) THEN hft.hour >= '2023-03-01 00:00:00' AND hft.hour <= '2023-03-01 23:59:59'
@@ -59,10 +59,8 @@ FROM (SELECT frcst.source_name                                                  
                                   date_trunc('hour', max(ccmt.scraped)) AS scraped_hour_dt
                            FROM cloud_coverage_measurement_tbl AS ccmt
                                     INNER JOIN location_tbl AS lt ON ccmt.location_id = lt.id
-                                    INNER JOIN region_tbl AS r ON lt.region_id = r.id
-                               AND (CASE WHEN (false) THEN r.name in ('Střední Čechy') ELSE true END)
                                     INNER JOIN county_tbl AS c ON lt.county_id = c.id
-                               AND (CASE WHEN (false) THEN c.name in ('Středočeský kraj') ELSE true END)
+                                        AND (CASE WHEN (false) THEN c.name in ('Středočeský kraj') ELSE true END)
                            WHERE source_id = 6
                              AND ccmt.cloud_coverage_total IS NOT NULL
                            GROUP BY ccmt.location_id, lt.name, ccmt.date_time

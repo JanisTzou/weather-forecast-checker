@@ -67,10 +67,8 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
                                                       date_trunc('hour', max(ccm.scraped)) AS scraped_hour_dt
                                        FROM cloud_coverage_measurement_tbl AS ccm
                                                 INNER JOIN location_tbl AS lt ON ccm.location_id = lt.id
-                                                INNER JOIN region_tbl AS r ON lt.region_id = r.id
-                                                     AND (CASE WHEN (:includeRegion) then r.name in (:region) ELSE true END)
                                                 INNER JOIN county_tbl AS c ON lt.county_id = c.id
-                                                     AND (CASE WHEN (:includeCounty) then c.name in (:county) ELSE true END)
+                                                     AND (CASE WHEN (:includeCounties) then c.name in (:county) ELSE true END)
                                        WHERE source_id = 6
                                          AND ccm.cloud_coverage_total IS NOT NULL
                                        GROUP BY ccm.location_id, lt.name, ccm.date_time
@@ -115,28 +113,28 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
         List<JpaForecastVerification> verifications;
         if (criteria.getFromDate() == null && criteria.getToDate() == null) {
             if (criteria.getPastHours() != null) {
-                verifications = jpaForecastVerificationRepository.findAllByPastHoursAndCountyNameAndRegionName(
-                        criteria.getPastHours(),
-                        criteria.getCounty(),
-                        criteria.getRegion()
-                );
+                if (criteria.getCounties().isEmpty()) {
+                    verifications = jpaForecastVerificationRepository.findAllByPastHoursAndCountyIsNull(criteria.getPastHours());
+                } else {
+                    verifications = jpaForecastVerificationRepository.findAllByPastHoursAndCountyNameIn(criteria.getPastHours(), criteria.getCounties());
+                }
+
             } else if (criteria.getDate() != null) {
-                verifications = jpaForecastVerificationRepository.findAllByDayAndCountyNameAndRegionName(
-                        criteria.getDate(),
-                        criteria.getCounty(),
-                        criteria.getRegion()
-                );
+                if (criteria.getCounties().isEmpty()) {
+                    verifications = jpaForecastVerificationRepository.findAllByDayAndCountyIsNull(criteria.getDate());
+                } else {
+                    verifications = jpaForecastVerificationRepository.findAllByDayAndCountyNameIn(criteria.getDate(), criteria.getCounties());
+                }
             } else {
                 log.warn("Unhandled case ...");
                 verifications = Collections.emptyList();
             }
         } else {
-            verifications = jpaForecastVerificationRepository.findAllByDayBetweenAndCountyNameAndRegionNameOrderByDay(
-                    criteria.getFromDate(),
-                    criteria.getToDate(),
-                    criteria.getCounty(),
-                    criteria.getRegion()
-            );
+            if (criteria.getCounties().isEmpty()) {
+                verifications = jpaForecastVerificationRepository.findAllByDayBetweenAndCountyIsNullOrderByDay(criteria.getFromDate(), criteria.getToDate());
+            } else {
+                verifications = jpaForecastVerificationRepository.findAllByDayBetweenAndCountyNameInOrderByDay(criteria.getFromDate(), criteria.getToDate(), criteria.getCounties());
+            }
         }
         return verifications.stream()
                 .map(jpaForecastVerificationMapper::toDomain)
@@ -145,6 +143,9 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
 
     @Override
     public List<ForecastVerification> calculateVerifications(VerificationCriteria criteria) {
+        if (criteria.getCounties().size() > 1) {
+            throw new IllegalArgumentException("Not allowed to calculate verifications for multiple counties");
+        }
         Map<String, Object> params = criteria.toParamsMap();
         String sql = Utils.fillTemplate(forecastVsMeasurementForPastHoursSql, params);
         SqlParameterSource parameters = new MapSqlParameterSource(params);
@@ -161,8 +162,7 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
                 rs.getInt("record_count"),
                 criteria.getPastHours(),
                 criteria.getDate(),
-                criteria.getRegion(),
-                criteria.getCounty()
+                criteria.getCounties().stream().findFirst().orElse(null)
         ));
     }
 
@@ -181,8 +181,6 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
         log.trace("Saving verification: {}", verification);
         JpaForecastVerification jpaVerification = jpaForecastVerificationMapper.toEntity(verification);
         Optional<JpaSource> jpaSource = jpaSourceRepository.findFirstByName(verification.getSource());
-        String region = verification.getRegion();
-        Optional<JpaRegion> jpaRegion = region != null ? jpaRegionRepository.findFirstByName(region) : Optional.empty();
 
         String county = verification.getCounty();
         Optional<JpaCounty> jpaCounty = county != null ? jpaCountyRepository.findFirstByName(county) : Optional.empty();
@@ -190,12 +188,10 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
         Optional<JpaForecastVerificationType> verificationType = jpaForecastVerificationTypeRepository.findFirstByName(verification.getType());
 
         if (jpaSource.isPresent()
-                && (region == null || jpaRegion.isPresent())
                 && (county == null || jpaCounty.isPresent())
                 && (verificationType.isPresent())
         ) {
             jpaVerification.setSource(jpaSource.get());
-            jpaVerification.setRegion(jpaRegion.orElse(null));
             jpaVerification.setCounty(jpaCounty.orElse(null));
             jpaVerification.setType(verificationType.get());
             jpaForecastVerificationRepository.save(jpaVerification);
@@ -215,14 +211,7 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
 
         for (JpaCounty jpaCounty : jpaCountyRepository.findAll()) {
             for (LocalDate date : missingDays) {
-                queryAndSave(VerificationCriteria.builder().setCounty(jpaCounty.getName()).setDate(date).build());
-            }
-        }
-
-        // regions
-        for (JpaRegion jpaRegion : jpaRegionRepository.findAll()) {
-            for (LocalDate date : missingDays) {
-                queryAndSave(VerificationCriteria.builder().setRegion(jpaRegion.getName()).setDate(date).build());
+                queryAndSave(VerificationCriteria.builder().addCounty(jpaCounty.getName()).setDate(date).build());
             }
         }
     }
@@ -236,23 +225,15 @@ public class ForecastVerificationRepositoryImpl implements ForecastVerificationR
 
         // whole Czech republic ...
         for (Integer hours : pastHours) {
-            jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, null, null);
+            jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyName(hours, null);
             queryAndSave(VerificationCriteria.builder().setPastHours(hours).build());
         }
 
         // by county
         for (JpaCounty county : jpaCountyRepository.findAll()) {
             for (Integer hours : pastHours) {
-                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, county.getName(), null);
-                queryAndSave(VerificationCriteria.builder().setPastHours(hours).setCounty(county.getName()).build());
-            }
-        }
-
-        // regions
-        for (JpaRegion region : jpaRegionRepository.findAll()) {
-            for (Integer hours : pastHours) {
-                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyNameAndRegionName(hours, null, region.getName());
-                queryAndSave(VerificationCriteria.builder().setPastHours(hours).setRegion(region.getName()).build());
+                jpaForecastVerificationRepository.deleteAllByPastHoursAndCountyName(hours, county.getName());
+                queryAndSave(VerificationCriteria.builder().setPastHours(hours).addCounty(county.getName()).build());
             }
         }
 

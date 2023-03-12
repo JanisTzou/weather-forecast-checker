@@ -9,7 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -20,19 +22,15 @@ class VerificationCriteria {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final Integer pastHours;
-    private final String region;
-    private final String county;
+    private final List<String> counties;
     private final LocalDate date;
     private final LocalDate fromDate;
     private final LocalDate toDate;
 
-    private VerificationCriteria(Integer pastHours, String region, String county, LocalDate date, LocalDate fromDate, LocalDate toDate) {
+    private VerificationCriteria(Integer pastHours, List<String> counties, LocalDate date, LocalDate fromDate, LocalDate toDate) {
         Validate.isTrue(pastHours != null || date != null || (fromDate != null && toDate != null), "Either pastHours or date or date range must be specified");
-        Validate.isTrue(!(region != null && county != null), "Either region or county can be specified, not both");
-//            Validate.isTrue(!(pastHours != null && date != null), "Either pastHours or date can be specified, not both");
         this.pastHours = pastHours;
-        this.region = region;
-        this.county = county;
+        this.counties = counties;
         this.date = date;
         // TODO add verification that date is not set if these two are ...
         this.fromDate = fromDate;
@@ -41,10 +39,6 @@ class VerificationCriteria {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public static VerificationCriteria from(Integer pastHours, String region, String county, LocalDate date, LocalDate fromDate, LocalDate toDate) {
-        return new VerificationCriteria(pastHours, region, county, date, fromDate, toDate);
     }
 
     public ForecastVerificationType getVerificationType() {
@@ -59,8 +53,7 @@ class VerificationCriteria {
     public Map<String, Object> toParamsMap() {
         Map<String, Object> params = new HashMap<>();
         addPastHours(params);
-        addRegion(params);
-        addCounty(params);
+        addCounties(params);
         addDateBounds(params);
         return params;
     }
@@ -80,18 +73,10 @@ class VerificationCriteria {
         }
     }
 
-    private void addRegion(Map<String, Object> params) {
-        // region
-        boolean includeRegion = region != null;
-        params.put("includeRegion", includeRegion);
-        String regionParam = includeRegion ? region : "-";
-        params.put("region", regionParam);
-    }
-
-    private void addCounty(Map<String, Object> params) {
-        boolean includeCounty = county != null;
-        params.put("includeCounty", includeCounty);
-        String countyParam = includeCounty ? county : "-";
+    private void addCounties(Map<String, Object> params) {
+        boolean includeCounties = counties != null && !counties.isEmpty();
+        params.put("includeCounties", includeCounties);
+        String countyParam = includeCounties ? String.join(",", counties) : "-";
         params.put("county", countyParam);
     }
 
@@ -123,8 +108,7 @@ class VerificationCriteria {
     public static class Builder {
 
         private Integer pastHours;
-        private String region;
-        private String county;
+        private final List<String> counties = new ArrayList<>();
         private LocalDate date;
         private LocalDate fromDate;
         private LocalDate toDate;
@@ -134,13 +118,17 @@ class VerificationCriteria {
             return this;
         }
 
-        public Builder setRegion(String region) {
-            this.region = region;
+        public Builder addCounty(String county) {
+            if (county != null) {
+                this.counties.add(county);
+            }
             return this;
         }
 
-        public Builder setCounty(String county) {
-            this.county = county;
+        public Builder addCounties(List<String> counties) {
+            if (counties != null) {
+                this.counties.addAll(counties);
+            }
             return this;
         }
 
@@ -156,7 +144,7 @@ class VerificationCriteria {
         }
 
         public VerificationCriteria build() {
-            return new VerificationCriteria(pastHours, region, county, date, fromDate, toDate);
+            return new VerificationCriteria(pastHours, counties, date, fromDate, toDate);
         }
     }
 

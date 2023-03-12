@@ -20,8 +20,6 @@ public class ForecastVerification {
     private final int recordCount;
     private final Integer pastHours;
     private final LocalDate day;
-    // add date range here ?
-    protected final String region;
     protected final String county;
 
 }
