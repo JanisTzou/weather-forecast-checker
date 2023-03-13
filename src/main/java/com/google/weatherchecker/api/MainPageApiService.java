@@ -7,9 +7,7 @@ import com.google.weatherchecker.repository.VerificationCriteria;
 import com.google.weatherchecker.repository.ForecastVerificationRepository;
 import com.google.weatherchecker.verification.PastHoursProps;
 import jakarta.annotation.Nullable;
-import lombok.Data;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,10 +43,20 @@ public class MainPageApiService {
                 .map(ph -> getVerificationsByPastHours(counties, ph))
                 .collect(Collectors.toList());
 
-        Optional<ChartDto> chart = getDailyVerificationChart(counties);
+        List<ForecastVerification> dailyVerifications = getDailyVerifications(counties);
 
-        if (!pastHours.isEmpty() || chart.isPresent()) {
-            return Optional.of(new MainPageDto(getTitle(counties), counties, pastHours, chart.orElse(null)));
+        Optional<DailyChartDto> chart = getDailyVerificationChart(dailyVerifications);
+
+        Optional<LongtermSourceComparisonChartDto> longtermComparison = getLongtermComparison(dailyVerifications);
+
+        if (!pastHours.isEmpty() || chart.isPresent() || longtermComparison.isPresent()) {
+            return Optional.of(new MainPageDto(
+                    getTitle(counties),
+                    counties,
+                    pastHours,
+                    chart.orElse(null),
+                    longtermComparison.orElse(null)
+            ));
         }
         return Optional.empty();
     }
@@ -56,7 +64,7 @@ public class MainPageApiService {
     private PastHoursDto getVerificationsByPastHours(List<String> counties, Integer ph) {
         VerificationCriteria criteria = VerificationCriteria.builder().addCounties(counties).setPastHours(ph).build();
         List<ForecastVerification> verifications = getForecastVerifications(criteria);
-        List<GroupedForecastVerification<GroupingKey>> groupedVerifications = groupBySource(verifications);
+        List<GroupedForecastVerification<SourceKey>> groupedVerifications = groupBySource(verifications);
 
         List<VerificationDto> verificationDtos = groupedVerifications.stream()
                 .sorted(Comparator.comparingInt(fv -> Math.abs(fv.getAvgDiff())))
@@ -74,15 +82,8 @@ public class MainPageApiService {
         return forecastVerifications;
     }
 
-    private Optional<ChartDto> getDailyVerificationChart(List<String> counties) {
-        LocalDate today = LocalDate.now();
-        LocalDate from = today.minusDays(dailyChartDays);
-        LocalDate to = today.minusDays(1);
-        // TODO pass sources as criteria that we do not want to include ...
-        VerificationCriteria criteria = VerificationCriteria.builder().addCounties(counties).setFromToDate(from, to).build();
-        List<ForecastVerification> verifications = getForecastVerifications(criteria);
-
-        List<GroupedForecastVerification<ValueKey>> groupedVerifications = group(verifications,
+    private Optional<DailyChartDto> getDailyVerificationChart(List<ForecastVerification> dailyVerifications) {
+        List<GroupedForecastVerification<ValueKey>> groupedVerifications = group(dailyVerifications,
                 v -> new ValueKey(v.getSource(), v.getDay()),
                 Comparator.comparing(g -> g.getGroupingKey().getDay())
         );
@@ -91,19 +92,56 @@ public class MainPageApiService {
                 .collect(Collectors.groupingBy(gv -> gv.getGroupingKey().getSource(), Collectors.toList()));
 
         if (!sourceVerifications.isEmpty()) {
-            List<ChartSeriesDto> chartSeriesDtos = toChartSeries(sourceVerifications);
-            return Optional.of(new ChartDto("TODO title", chartSeriesDtos));
+            List<DailyChartSeriesDto> seriesDtos = toChartSeries(sourceVerifications);
+            return Optional.of(new DailyChartDto("TODO title", seriesDtos));
         }
         return Optional.empty();
     }
 
+    private Optional<LongtermSourceComparisonChartDto> getLongtermComparison(List<ForecastVerification> dailyVerifications) {
+        List<GroupedForecastVerification<SourceKey>> groupedVerifications = group(dailyVerifications,
+                v -> new SourceKey(v.getSource()),
+                Comparator.comparing(v -> v.getGroupingKey().getSource())
+        );
+
+        if (!groupedVerifications.isEmpty()) {
+            List<LongtermComparisonValueDto> valueDtos = toLongtermComparisonValues(groupedVerifications);
+            return Optional.of(new LongtermSourceComparisonChartDto("TODO title", valueDtos));
+        }
+        return Optional.empty();
+    }
+
+    private List<ForecastVerification> getDailyVerifications(List<String> counties) {
+        LocalDate today = LocalDate.now();
+        LocalDate from = today.minusDays(dailyChartDays);
+        LocalDate to = today.minusDays(1);
+        // TODO pass sources as criteria that we do not want to include ...
+        VerificationCriteria criteria = VerificationCriteria.builder().addCounties(counties).setFromToDate(from, to).build();
+        List<ForecastVerification> verifications = getForecastVerifications(criteria);
+        return verifications;
+    }
+
     // TODO provide a mapper ?
-    private List<ChartSeriesDto> toChartSeries(Map<Source, List<GroupedForecastVerification<ValueKey>>> sourceVerifications) {
-        return sourceVerifications.entrySet().stream()
+    private List<DailyChartSeriesDto> toChartSeries(Map<Source, List<GroupedForecastVerification<ValueKey>>> verifications) {
+        return verifications.entrySet().stream()
                 .map(e -> {
                     List<GroupedForecastVerification<ValueKey>> vs = e.getValue();
-                    List<ChartValueDto> values = vs.stream().map(v -> new ChartValueDto(v.getGroupingKey().getDay(), v.getAvgDiffAbs(), v.getAvgDiff(), v.getRecordCount())).collect(Collectors.toList());
-                    return new ChartSeriesDto(e.getKey().name(), "TODO", values);
+                    List<DailyChartValueDto> values = vs.stream().map(v -> new DailyChartValueDto(v.getGroupingKey().getDay(), v.getAvgDiffAbs(), v.getAvgDiff(), v.getRecordCount())).collect(Collectors.toList());
+                    Source source = e.getKey();
+                    String title = source.getAdminName().orElse(source.name());
+                    return new DailyChartSeriesDto(source.name(), title, values);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // TODO basically we need 2 version with different sorting ...
+    private List<LongtermComparisonValueDto> toLongtermComparisonValues(List<GroupedForecastVerification<SourceKey>> verifications) {
+        return verifications.stream()
+                .sorted(Comparator.comparingInt(v -> Math.abs(v.getAvgDiff())))
+                .map(v -> {
+                    Source source = v.getGroupingKey().getSource();
+                    String title = source.getAdminName().orElse(source.name());
+                    return new LongtermComparisonValueDto(source, title,v.getAvgDiffAbs(), v.getAvgDiff(), v.getRecordCount());
                 })
                 .collect(Collectors.toList());
     }
@@ -113,7 +151,7 @@ public class MainPageApiService {
             if (counties.size() == 1) {
                 return counties.get(0);
             } else {
-                return "Údaje za více vybraných krajů";
+                return "Více vybraných krajů";
             }
         } else {
             return "Česká repulika";
@@ -122,7 +160,7 @@ public class MainPageApiService {
 
     @ToString
     @Getter
-    public static class ValueKey extends GroupingKey {
+    public static class ValueKey extends SourceKey {
 
         private final LocalDate day;
 

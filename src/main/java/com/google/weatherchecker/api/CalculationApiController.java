@@ -1,6 +1,7 @@
 package com.google.weatherchecker.api;
 
 import com.google.weatherchecker.model.ForecastVerification;
+import com.google.weatherchecker.model.Source;
 import com.google.weatherchecker.repository.ForecastVerificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,14 +43,19 @@ public class CalculationApiController {
         List<VerificationDto> list = forecastVerifications.stream()
                 .sorted(Comparator.comparingInt(fv -> Math.abs(fv.getAvgDiff())))
                 .map(c ->
-                        new VerificationDto(c.getSource().name(),
-                                c.getAvgForecastCloudTotal(),
-                                c.getAvgMeasuredCloudTotal(),
-                                c.getAvgDiffAbs(),
-                                c.getAvgDiff(),
-                                c.getRecordCount(),
-                                "TODO",
-                                "TODO"))
+                {
+                    Source source = c.getSource();
+                    return new VerificationDto(
+                            source.getAdminName().orElse(source.name()),
+                            source,
+                            c.getAvgForecastCloudTotal(),
+                            c.getAvgMeasuredCloudTotal(),
+                            c.getAvgDiffAbs(),
+                            c.getAvgDiff(),
+                            c.getRecordCount(),
+                            "TODO",
+                            "TODO");
+                })
                 .collect(Collectors.toList());
 
         if (list.isEmpty()) {

@@ -1,5 +1,6 @@
 package com.google.weatherchecker.api;
 
+import com.google.weatherchecker.model.Source;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -7,7 +8,8 @@ import lombok.Data;
 @AllArgsConstructor
 public class VerificationDto {
 
-    private String source;
+    private String sourceTitle;
+    private Source source;
     private int avgForecastCloudTotal;
     private int avgMeasuredCloudTotal;
     private int avgDiffAbs;

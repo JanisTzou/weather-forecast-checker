@@ -22,7 +22,8 @@ public class MainPageApiController {
     private final MainPageApiService mainPageApiService;
 
     @GetMapping(value = "/main-page", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MainPageDto> getComparisons(@RequestParam(value = "counties", required = false) List<String> counties) {
+    public ResponseEntity<MainPageDto> getMainPageData(@RequestParam(value = "counties", required = false) List<String> counties) {
+        log.info("Request for main page data: counties: {}", counties); // TODO debug only ...
         Optional<MainPageDto> mainPage = mainPageApiService.getMainPage(counties);
         if (mainPage.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

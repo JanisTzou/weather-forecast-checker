@@ -2,6 +2,7 @@ package com.google.weatherchecker.api;
 
 import com.google.weatherchecker.model.ForecastVerification;
 import com.google.weatherchecker.model.GroupedForecastVerification;
+import com.google.weatherchecker.model.Source;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.stereotype.Component;
@@ -14,7 +15,9 @@ import static com.google.weatherchecker.model.GroupedForecastVerification.*;
 public class VerificationDtoMapper {
 
     public VerificationDto toDto(ForecastVerification c) {
-        return new VerificationDto(c.getSource().name(),
+        Source source = c.getSource();
+        return new VerificationDto(source.getAdminName().orElse(source.name()),
+                source,
                 c.getAvgForecastCloudTotal(),
                 c.getAvgMeasuredCloudTotal(),
                 c.getAvgDiffAbs(),
@@ -25,8 +28,10 @@ public class VerificationDtoMapper {
         );
     }
 
-    public VerificationDto toDto(GroupedForecastVerification<GroupingKey> c) {
-        return new VerificationDto(c.getGroupingKey().getSource().name(),
+    public VerificationDto toDto(GroupedForecastVerification<SourceKey> c) {
+        Source source = c.getGroupingKey().getSource();
+        return new VerificationDto(source.getAdminName().orElse(source.name()),
+                source,
                 c.getAvgForecastCloudTotal(),
                 c.getAvgMeasuredCloudTotal(),
                 c.getAvgDiffAbs(),

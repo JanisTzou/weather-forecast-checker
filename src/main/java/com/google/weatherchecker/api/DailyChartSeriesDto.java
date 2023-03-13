@@ -7,10 +7,10 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class ChartSeriesDto {
+public class DailyChartSeriesDto {
 
     private String source;
     private String title;
-    private List<ChartValueDto> values;
+    private List<DailyChartValueDto> values;
 
 }

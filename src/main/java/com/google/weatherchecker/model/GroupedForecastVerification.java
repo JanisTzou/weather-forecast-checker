@@ -19,18 +19,18 @@ public class GroupedForecastVerification<T> {
     private final int avgDiff;
     private final int recordCount;
 
-    public static List<GroupedForecastVerification<GroupingKey>> groupBySource(List<ForecastVerification> verifications) {
-        return group(verifications, forecastVerification -> new GroupingKey(forecastVerification.getSource()));
+    public static List<GroupedForecastVerification<SourceKey>> groupBySource(List<ForecastVerification> verifications) {
+        return group(verifications, forecastVerification -> new SourceKey(forecastVerification.getSource()));
     }
 
-    public static <K extends GroupingKey> List<GroupedForecastVerification<K>> group(List<ForecastVerification> verifications,
-                                                                                     Function<ForecastVerification, K> groupingByKey) {
+    public static <K extends SourceKey> List<GroupedForecastVerification<K>> group(List<ForecastVerification> verifications,
+                                                                                   Function<ForecastVerification, K> groupingByKey) {
         return group(verifications, groupingByKey, (v1, v2) -> 0);
     }
 
-    public static <K extends GroupingKey> List<GroupedForecastVerification<K>> group(List<ForecastVerification> verifications,
-                                                                                     Function<ForecastVerification, K> groupingByKey,
-                                                                                     Comparator<GroupedForecastVerification<K>> sorting) {
+    public static <K extends SourceKey> List<GroupedForecastVerification<K>> group(List<ForecastVerification> verifications,
+                                                                                   Function<ForecastVerification, K> groupingByKey,
+                                                                                   Comparator<GroupedForecastVerification<K>> sorting) {
 
         Map<K, List<ForecastVerification>> groupLists = verifications.stream()
                 .collect(Collectors.groupingBy(groupingByKey, Collectors.toList()));
@@ -83,7 +83,7 @@ public class GroupedForecastVerification<T> {
      */
     @Data
     @RequiredArgsConstructor
-    public static class GroupingKey {
+    public static class SourceKey {
         private final Source source;
     }
 
